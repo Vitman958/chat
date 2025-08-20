@@ -1,3 +1,6 @@
+"""
+Данный файл запускает сервер, к которому подключаются клиенты
+"""
 import asyncio
 from datetime import datetime
 
@@ -47,7 +50,7 @@ async def main():
         await write_task
         writer.close()
         await writer.wait_closed()
-
+        
 
     server = await asyncio.start_server(handle_client, 'localhost', 8888)
 
