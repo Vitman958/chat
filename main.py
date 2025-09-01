@@ -1,6 +1,3 @@
-"""
-Данный файл запускает сервер, к которому подключаются клиенты
-"""
 import asyncio
 from datetime import datetime
 
