@@ -18,7 +18,7 @@ async def handle_read(reader, nick_name, stop_event):
         data = await reader.readline()
         if not data:
             print(f"Пользователь [{nick_name}] вышел с сервера")
-            logging.info(f"Пользователь {nick_name} вышел с сервера")
+            logging.warning(f"Пользователь {nick_name} вышел с сервера")
             stop_event.set()
             break
 
