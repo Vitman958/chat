@@ -5,7 +5,12 @@ import logging
 from aioconsole import ainput
 
 
-logging.basicConfig(level=logging.INFO, filename='app_info.log', format='%(asctime)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+logging.basicConfig(
+    level=logging.INFO, 
+    filename='app_info.log', 
+    format='%(asctime)s - %(levelname)s - %(message)s', 
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
 
 
 async def handle_read(reader, nick_name, stop_event):
