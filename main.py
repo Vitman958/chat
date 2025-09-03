@@ -5,12 +5,14 @@ import logging
 from aioconsole import ainput
 
 
-logging.basicConfig(
-    level=logging.INFO, 
-    filename='app_info.log', 
-    format='%(asctime)s - %(levelname)s - %(message)s', 
-    datefmt='%Y-%m-%d %H:%M:%S'
-)
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+py_handler = logging.FileHandler("app_info.log")
+py_formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s", datefmt = "%Y-%m-%d %H:%M:%S")
+
+py_handler.setFormatter(py_formatter)
+logger.addHandler(py_handler)
 
 
 async def handle_read(reader, nick_name, stop_event):
@@ -18,7 +20,7 @@ async def handle_read(reader, nick_name, stop_event):
         data = await reader.readline()
         if not data:
             print(f"Пользователь [{nick_name}] вышел с сервера")
-            logging.warning(f"Пользователь {nick_name} вышел с сервера")
+            logger.warning(f"Пользователь {nick_name} вышел с сервера")
             stop_event.set()
             break
 
@@ -26,7 +28,7 @@ async def handle_read(reader, nick_name, stop_event):
         if msg == "/exit":
             stop_event.set()
             print(f"Пользователь [{nick_name}] вышел с сервера")
-            logging.info(f"Пользователь {nick_name} вышел с сервера")
+            logger.info(f"Пользователь {nick_name} вышел с сервера")
             break
         print(msg)
     
@@ -43,7 +45,7 @@ async def handle_write(writer, server_name, stop_event):
 
 async def main():
     server_name = await ainput("Имя сервера: ")
-    logging.info(f"Создан сервер с именем: {server_name}")
+    logger.info(f"Создан сервер с именем: {server_name}")
 
     async def handle_client(reader, writer):
         name = await reader.readline()
