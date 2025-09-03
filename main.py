@@ -1,7 +1,11 @@
 import asyncio
 from datetime import datetime
+import logging
 
 from aioconsole import ainput
+
+
+logging.basicConfig(level=logging.INFO, filename='app_info.log', format='%(asctime)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 
 
 async def handle_read(reader, nick_name, stop_event):
@@ -32,6 +36,7 @@ async def handle_write(writer, server_name, stop_event):
 
 async def main():
     server_name = await ainput("Имя сервера: ")
+    logging.info(f"Создан сервер с именем: {server_name}")
 
     async def handle_client(reader, writer):
         name = await reader.readline()
