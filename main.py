@@ -1,18 +1,12 @@
 import asyncio
-from datetime import datetime
 import logging
+from datetime import datetime
 
 from aioconsole import ainput
+from logger_setup import get_logger
 
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-
-py_handler = logging.FileHandler("app_info.log")
-py_formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s", datefmt = "%Y-%m-%d %H:%M:%S")
-
-py_handler.setFormatter(py_formatter)
-logger.addHandler(py_handler)
+logger = get_logger(__name__)
 
 
 async def handle_read(reader, nick_name, stop_event):
@@ -31,7 +25,7 @@ async def handle_read(reader, nick_name, stop_event):
             logger.info(f"Пользователь {nick_name} вышел с сервера")
             break
         print(msg)
-    
+
 
 async def handle_write(writer, server_name, stop_event):
     while True:
@@ -53,17 +47,22 @@ async def main():
         print(f"Пользователь [{nick_name}] подключился на сервер")
 
         stop_event = asyncio.Event()
-        read_task = asyncio.create_task(handle_read(reader, nick_name, stop_event))
-        write_task = asyncio.create_task(handle_write(writer, server_name, stop_event))
+        read_task = asyncio.create_task(
+            handle_read(reader, nick_name, stop_event)
+        )
+        write_task = asyncio.create_task(
+            handle_write(writer, server_name, stop_event)
+        )
         
         await stop_event.wait()
         await read_task
         await write_task
         writer.close()
         await writer.wait_closed()
-        
 
-    server = await asyncio.start_server(handle_client, 'localhost', 8888)
+    server = await asyncio.start_server(
+        handle_client, 'localhost', 8888
+    )
 
     async with server:
         await server.serve_forever()
