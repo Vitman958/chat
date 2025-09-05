@@ -10,22 +10,35 @@ logger = get_logger(__name__)
 
 
 async def handle_read(reader, nick_name, stop_event):
-    while True:
-        data = await reader.readline()
-        if not data:
-            print(f"Пользователь [{nick_name}] вышел с сервера")
-            logger.warning(f"Пользователь {nick_name} вышел с сервера")
-            stop_event.set()
-            break
+    try:
+        while True:
+            try:
+                data = await reader.readline()
+                if not data:
+                    print(f"Пользователь [{nick_name}] вышел с сервера")
+                    logger.warning(f"Пользователь {nick_name} вышел с сервера")
+                    stop_event.set()
+                    break
 
-        msg = data.decode().strip()
-        if msg == "/exit":
-            stop_event.set()
-            print(f"Пользователь [{nick_name}] вышел с сервера")
-            logger.info(f"Пользователь {nick_name} вышел с сервера")
-            break
-        print(msg)
-        logger.info(f"Пользователь {nick_name} отправил сообщение")
+                msg = data.decode().strip()
+                if msg == "/exit":
+                    stop_event.set()
+                    print(f"Пользователь [{nick_name}] вышел с сервера")
+                    logger.info(f"Пользователь {nick_name} вышел с сервера")
+                    break
+                print(msg)
+                logger.info(f"Пользователь {nick_name} отправил сообщение")
+                
+            except (ConnectionResetError, asyncio.IncompleteReadError) as e:
+                logging.error(f"Сетевая ошибка при чтении от {nick_name}: {e}")
+                break
+            except Exception as e:
+                logging.error(f"Неожиданная ошибка при чтении от {nick_name}: {e}")
+                break
+
+    except Exception as e:
+        logger.error(f"Ошибка запуска handle_read")
+
 
 
 async def handle_write(writer, server_name, stop_event):
