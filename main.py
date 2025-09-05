@@ -25,6 +25,7 @@ async def handle_read(reader, nick_name, stop_event):
             logger.info(f"Пользователь {nick_name} вышел с сервера")
             break
         print(msg)
+        logger.info(f"Пользователь {nick_name} отправил сообщение")
 
 
 async def handle_write(writer, server_name, stop_event):
@@ -45,6 +46,7 @@ async def main():
         name = await reader.readline()
         nick_name = name.decode().strip()
         print(f"Пользователь [{nick_name}] подключился на сервер")
+        logger.info(f"Пользователь {nick_name} подключился к серверу")
 
         stop_event = asyncio.Event()
         read_task = asyncio.create_task(
