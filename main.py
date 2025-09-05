@@ -28,7 +28,7 @@ async def handle_read(reader, nick_name, stop_event):
                     break
                 print(msg)
                 logger.info(f"Пользователь {nick_name} отправил сообщение")
-                
+
             except (ConnectionResetError, asyncio.IncompleteReadError) as e:
                 logging.error(f"Сетевая ошибка при чтении от {nick_name}: {e}")
                 break
@@ -40,15 +40,21 @@ async def handle_read(reader, nick_name, stop_event):
         logger.error(f"Ошибка запуска handle_read")
 
 
-
 async def handle_write(writer, server_name, stop_event):
-    while True:
-        if stop_event.is_set():
-            break
-        msg = await ainput()
-        time = datetime.now().strftime("%H:%M")
-        writer.write(f"[{time}][{server_name}]: {msg}\n".encode())
-        await writer.drain()
+    try:
+        while True:
+            try:
+                if stop_event.is_set():
+                    break
+                msg = await ainput()
+                time = datetime.now().strftime("%H:%M")
+                writer.write(f"[{time}][{server_name}]: {msg}\n".encode())
+                await writer.drain()
+            except Exception as e:
+                logging.error(f"Сетевая ошибка при отправке от {server_name}: {e}")
+
+    except Exception as e:
+        logger.error(f"Ошибка запуска handle_write")
 
 
 async def main():
