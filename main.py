@@ -34,6 +34,7 @@ async def handle_read(reader, writer, nick_name, stop_event):
                     print(f"Пользователь [{nick_name}] вышел с сервера")
                     logger.info(f"Пользователь {nick_name} вышел с сервера")
                     break
+                
                 else:
                     time = datetime.now().strftime("%H:%M")
                     print(f"[{time}][{nick_name}]: {msg}")
