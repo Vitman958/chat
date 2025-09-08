@@ -29,15 +29,15 @@ async def handle_read(reader, writer, nick_name, stop_event):
                         await writer.drain()
                         logger.info(f"Пользователь [{nick_name} запросил справку]")
 
-                if msg == "/exit":
+                elif msg == "/exit":
                     stop_event.set()
                     print(f"Пользователь [{nick_name}] вышел с сервера")
                     logger.info(f"Пользователь {nick_name} вышел с сервера")
                     break
-
-                time = datetime.now().strftime("%H:%M")
-                print(f"[{time}][{nick_name}]: {msg}")
-                logger.info(f"Пользователь {nick_name} отправил сообщение")
+                else:
+                    time = datetime.now().strftime("%H:%M")
+                    print(f"[{time}][{nick_name}]: {msg}")
+                    logger.info(f"Пользователь {nick_name} отправил сообщение")
 
             except (ConnectionResetError, asyncio.IncompleteReadError) as e:
                 logging.error(f"Сетевая ошибка при чтении от {nick_name}: {e}")
