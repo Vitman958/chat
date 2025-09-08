@@ -23,7 +23,7 @@ async def handle_write(writer, nick_name, stop_event):
             await writer.wait_closed()
             stop_event.set()
             break
-
+        
         time = datetime.now().strftime("%H:%M")
         writer.write(f"[{time}][{nick_name}]: {msg}\n".encode())
         await writer.drain()
