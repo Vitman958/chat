@@ -4,12 +4,13 @@ from datetime import datetime
 
 from aioconsole import ainput
 from logger_setup import get_logger
+from list_commands import commands
 
 
 logger = get_logger(__name__)
 
 
-async def handle_read(reader, nick_name, stop_event):
+async def handle_read(writer, reader, nick_name, stop_event):
     try:
         while True:
             try:
@@ -21,12 +22,21 @@ async def handle_read(reader, nick_name, stop_event):
                     break
 
                 msg = data.decode().strip()
+
+                if msg == "/help":
+                    for command in commands:
+                        writer.write(f"[Сервер]: {command}\n".encode())
+                        await writer.drain()
+                        logger.info(f"Пользователь [{nick_name} запросил справку]")
+
                 if msg == "/exit":
                     stop_event.set()
                     print(f"Пользователь [{nick_name}] вышел с сервера")
                     logger.info(f"Пользователь {nick_name} вышел с сервера")
                     break
-                print(msg)
+
+                time = datetime.now().strftime("%H:%M")
+                print(f"[{time}][{nick_name}]: {msg}")
                 logger.info(f"Пользователь {nick_name} отправил сообщение")
 
             except (ConnectionResetError, asyncio.IncompleteReadError) as e:
@@ -69,7 +79,7 @@ async def main():
 
         stop_event = asyncio.Event()
         read_task = asyncio.create_task(
-            handle_read(reader, nick_name, stop_event)
+            handle_read(writer, reader, nick_name, stop_event)
         )
         write_task = asyncio.create_task(
             handle_write(writer, server_name, stop_event)
