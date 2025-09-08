@@ -10,7 +10,7 @@ from list_commands import commands
 logger = get_logger(__name__)
 
 
-async def handle_read(writer, reader, nick_name, stop_event):
+async def handle_read(reader, writer, nick_name, stop_event):
     try:
         while True:
             try:
@@ -79,7 +79,7 @@ async def main():
 
         stop_event = asyncio.Event()
         read_task = asyncio.create_task(
-            handle_read(writer, reader, nick_name, stop_event)
+            handle_read(reader, writer, nick_name, stop_event)
         )
         write_task = asyncio.create_task(
             handle_write(writer, server_name, stop_event)
