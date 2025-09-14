@@ -7,7 +7,7 @@ from logger_setup import get_logger
 from list_commands import commands
 
 
-class list_clients:
+class ListClients:
     def __init__(self):
         self.users = {}
         self.writers = set()
@@ -47,7 +47,6 @@ async def handle_read(reader, writer, nick_name, stop_event, users):
                 elif msg == "/exit":
                     stop_event.set()
                     users.remove_user(writer)
-                    del users[writer]
                     print(f"Пользователь [{nick_name}] вышел с сервера")
                     logger.info(f"Пользователь {nick_name} вышел с сервера")
                     break
@@ -114,7 +113,7 @@ def create_handler(users, server_name):
 async def main():
     server_name = await ainput("Имя сервера: ")
     logger.info(f"Создан сервер с именем: {server_name}")
-    users = list_clients()
+    users = ListClients()
 
     handler = create_handler(users, server_name)
 
