@@ -7,19 +7,30 @@ from logger_setup import get_logger
 from list_commands import commands
 
 
+class list_clients:
+    def __init__(self):
+        self.users = {}
+        self.writers = set()
+
+    def add_user(self, writer, nick_name):
+        self.writers.add(writer)
+        self.users[writer] = nick_name
+    
+    def remove_user(self, writer):
+        self.writers.remove(writer)
+        del self.users[writer]
+
+
 logger = get_logger(__name__)
-writers = set()
-users = {}
 
 
-async def handle_read(reader, writer, nick_name, stop_event):
+async def handle_read(reader, writer, nick_name, stop_event, users):
     try:
         while True:
             try:
                 data = await reader.readline()
                 if not data:
-                    writers.remove(writer)
-                    del users[writer]
+                    users.remove_user(writer)
                     print(f"Пользователь [{nick_name}] вышел с сервера")
                     logger.warning(f"Пользователь {nick_name} вышел с сервера")
                     stop_event.set()
@@ -35,7 +46,7 @@ async def handle_read(reader, writer, nick_name, stop_event):
 
                 elif msg == "/exit":
                     stop_event.set()
-                    writers.remove(writer)
+                    users.remove_user(writer)
                     del users[writer]
                     print(f"Пользователь [{nick_name}] вышел с сервера")
                     logger.info(f"Пользователь {nick_name} вышел с сервера")
@@ -74,43 +85,43 @@ async def handle_write(writer, server_name, stop_event):
         logger.error(f"Ошибка запуска handle_write")
 
 
-async def main():
-    server_name = await ainput("Имя сервера: ")
-    logger.info(f"Создан сервер с именем: {server_name}")
-
+def create_handler(users, server_name):
     async def handle_client(reader, writer):
         name = await reader.readline()
         nick_name = name.decode().strip()
-        
-        if nick_name in users.values():
-            writer.write(f"Этот никнейм уже занят\n".encode())
-            await writer.drain()
-            writer.close()
-            return 
-        
-        writers.add(writer)
-        users[writer] = nick_name
+            
+        users.add_user(writer, nick_name)
 
         print(f"Пользователь [{nick_name}] подключился на сервер")
         logger.info(f"Пользователь {nick_name} подключился к серверу")
-        
+
         stop_event = asyncio.Event()
         read_task = asyncio.create_task(
-            handle_read(reader, writer, nick_name, stop_event)
+            handle_read(reader, writer, nick_name, stop_event, users)
         )
         write_task = asyncio.create_task(
             handle_write(writer, server_name, stop_event)
         )
-        
+
         await stop_event.wait()
         await read_task
         await write_task
         writer.close()
         await writer.wait_closed()
+    return handle_client
+
+
+async def main():
+    server_name = await ainput("Имя сервера: ")
+    logger.info(f"Создан сервер с именем: {server_name}")
+    users = list_clients()
+
+    handler = create_handler(users, server_name)
 
     server = await asyncio.start_server(
-        handle_client, 'localhost', 8888
+        handler, 'localhost', 8888
     )
+
 
     async with server:
         await server.serve_forever()
