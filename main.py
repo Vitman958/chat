@@ -20,6 +20,12 @@ class ListClients:
         self.writers.remove(writer)
         del self.users[writer]
 
+    def check_user(self, nick_name):
+        if nick_name in self.users.values():
+            return False
+        else:
+            return True
+
 
 logger = get_logger(__name__)
 
@@ -88,8 +94,14 @@ def create_handler(users, server_name):
     async def handle_client(reader, writer):
         name = await reader.readline()
         nick_name = name.decode().strip()
-            
-        users.add_user(writer, nick_name)
+
+        if users.check_user(nick_name):  
+            users.add_user(writer, nick_name)
+        else:
+            writer.write(f"Этот никней уже занят\n".encode())
+            await writer.drain()
+            writer.close()
+            return 
 
         print(f"Пользователь [{nick_name}] подключился на сервер")
         logger.info(f"Пользователь {nick_name} подключился к серверу")
