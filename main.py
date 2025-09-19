@@ -26,15 +26,35 @@ class ListClients:
         else:
             return True
 
+    def get_users(self):
+        return self.writers
+    
+    def get_user(self, writer):
+        if writer is None:
+            return 
+        return self.users[writer]
+    
 
 logger = get_logger(__name__)
 
+
+async def broadcast(message, users, sender_name, exclude_writer=None):
+    writers = users.get_users()
+    time = datetime.now().strftime("%H:%M")
+    print(f"Broadcasting to {len(writers)} users")
+    for writer in writers:
+        if writer is exclude_writer:
+            continue
+        writer.write(f"[{time}][{sender_name}]: {message}\n".encode())
+        await writer.drain()
+        
 
 async def handle_read(reader, writer, nick_name, stop_event, users):
     try:
         while True:
             try:
                 data = await reader.readline()
+                
                 if not data:
                     users.remove_user(writer)
                     print(f"Пользователь [{nick_name}] вышел с сервера")
@@ -59,6 +79,7 @@ async def handle_read(reader, writer, nick_name, stop_event, users):
                 
                 else:
                     time = datetime.now().strftime("%H:%M")
+                    await broadcast(msg, users, nick_name, exclude_writer=writer)
                     print(f"[{time}][{nick_name}]: {msg}")
                     logger.info(f"Пользователь {nick_name} отправил сообщение")
 
@@ -73,16 +94,15 @@ async def handle_read(reader, writer, nick_name, stop_event, users):
         logger.error(f"Ошибка запуска handle_read")
 
 
-async def handle_write(writer, server_name, stop_event):
+async def handle_write(writer, server_name, stop_event, users):
     try:
         while True:
             try:
                 if stop_event.is_set():
                     break
                 msg = await ainput()
-                time = datetime.now().strftime("%H:%M")
-                writer.write(f"[{time}][{server_name}]: {msg}\n".encode())
-                await writer.drain()
+                await broadcast(msg, users, server_name)
+                
             except Exception as e:
                 logging.error(f"Сетевая ошибка при отправке от {server_name}: {e}")
 
@@ -111,7 +131,7 @@ def create_handler(users, server_name):
             handle_read(reader, writer, nick_name, stop_event, users)
         )
         write_task = asyncio.create_task(
-            handle_write(writer, server_name, stop_event)
+            handle_write(writer, server_name, stop_event, users)
         )
 
         await stop_event.wait()
