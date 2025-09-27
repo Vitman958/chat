@@ -1,5 +1,4 @@
 import asyncio
-import logging
 from datetime import datetime
 
 from aioconsole import ainput
@@ -7,7 +6,7 @@ from logger_setup import get_logger
 from list_commands import commands
 from users import ListClients
 
-
+   
 logger = get_logger(__name__)
 
 
@@ -57,10 +56,10 @@ async def handle_read(reader, writer, nick_name, stop_event, users):
                     logger.info(f"Пользователь {nick_name} отправил сообщение")
 
             except (ConnectionResetError, asyncio.IncompleteReadError) as e:
-                logging.error(f"Сетевая ошибка при чтении от {nick_name}: {e}")
+                logger.error(f"Сетевая ошибка при чтении от {nick_name}: {e}")
                 break
             except Exception as e:
-                logging.error(f"Неожиданная ошибка при чтении от {nick_name}: {e}")
+                logger.error(f"Неожиданная ошибка при чтении от {nick_name}: {e}")
                 break
 
     except Exception as e:
@@ -77,7 +76,7 @@ async def handle_write(writer, server_name, stop_event, users):
                 await broadcast(msg, users, server_name)
                 
             except Exception as e:
-                logging.error(f"Сетевая ошибка при отправке от {server_name}: {e}")
+                logger.error(f"Сетевая ошибка при отправке от {server_name}: {e}")
 
     except Exception as e:
         logger.error(f"Ошибка запуска handle_write")
