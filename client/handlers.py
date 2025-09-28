@@ -1,8 +1,6 @@
-import asyncio
 from datetime import datetime
 
 from aioconsole import ainput
-
 
 async def handle_read(reader, stop_event):
     while True:
@@ -26,22 +24,3 @@ async def handle_write(writer, nick_name, stop_event):
         
         writer.write(f"{msg}\n".encode())
         await writer.drain()
-
-
-async def main():
-    reader, writer = await asyncio.open_connection("localhost", 8888)
-    stop_event = asyncio.Event()
-
-    asyncio.create_task(handle_read(reader, stop_event))
-
-    nick_name = await ainput("Введите свое имя: ")
-    writer.write((nick_name + '\n').encode())
-    await writer.drain()
-
-    asyncio.create_task(handle_write(writer, nick_name, stop_event))
-
-    await stop_event.wait()
-
-
-if __name__ == '__main__':
-    asyncio.run(main())
