@@ -1,3 +1,4 @@
 app_info.log
 __pycache__
 list_commands.py
+__init__.py
