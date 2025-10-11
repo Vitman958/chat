@@ -1,7 +1,5 @@
 app_info.log
 __pycache__
-list_commands.py
-__init__.py
 dist
 build
 client_app.spec
