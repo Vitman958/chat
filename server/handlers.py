@@ -34,6 +34,8 @@ async def handle_read(reader, writer, nick_name, stop_event, users):
                 elif msg == "/exit":
                     stop_event.set()
                     users.remove_user(writer)
+                    info = f"Пользователь [{nick_name}] вышел с сервера"
+                    await broadcast(info, users, "Сервер", exclude_writer=writer)
                     print(f"Пользователь [{nick_name}] вышел с сервера")
                     logger.info(f"Пользователь {nick_name} вышел с сервера")
                     break
