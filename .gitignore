@@ -1,5 +1,10 @@
 app_info.log
 __pycache__
+<<<<<<< HEAD
+=======
+list_commands.py
+__init__.py
+>>>>>>> 7be7c78f730908edbd9756273233088885e484a2
 dist
 build
 client_app.spec

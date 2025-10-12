@@ -6,7 +6,11 @@ from utils.logger_setup import get_logger
 logger = get_logger(__name__)
 
 
+<<<<<<< HEAD
 def create_handler(users, server_name, handle_read, handle_write, broadcast):
+=======
+def create_handler(users, server_name, handle_read, handle_write):
+>>>>>>> 7be7c78f730908edbd9756273233088885e484a2
     async def handle_client(reader, writer):
         name = await reader.readline()
         nick_name = name.decode().strip()
@@ -19,8 +23,11 @@ def create_handler(users, server_name, handle_read, handle_write, broadcast):
             writer.close()
             return 
 
+<<<<<<< HEAD
         connection_msg = f"Пользователь [{nick_name}] подключился к серверу"
         await broadcast(connection_msg, users, server_name, exclude_writer = writer)
+=======
+>>>>>>> 7be7c78f730908edbd9756273233088885e484a2
         print(f"Пользователь [{nick_name}] подключился на сервер")
         logger.info(f"Пользователь {nick_name} подключился к серверу")
 
