@@ -16,13 +16,6 @@ async def handle_read(reader, writer, nick_name, stop_event, users):
             try:
                 data = await reader.readline()
                 
-                if not data:
-                    users.remove_user(writer)
-                    print(f"Пользователь [{nick_name}] вышел с сервера")
-                    logger.warning(f"Пользователь {nick_name} вышел с сервера")
-                    stop_event.set()
-                    break
-
                 msg = data.decode().strip()
 
                 if msg == "/help":
@@ -36,7 +29,7 @@ async def handle_read(reader, writer, nick_name, stop_event, users):
                     users.remove_user(writer)
                     info = f"Пользователь [{nick_name}] вышел с сервера"
                     await broadcast(info, users, "Сервер", exclude_writer=writer)
-                    print(f"Пользователь [{nick_name}] вышел с сервера")
+                    print(f"Пользователь [{nick_name}] вышел с сервера, используя команду /exit")
                     logger.info(f"Пользователь {nick_name} вышел с сервера")
                     break
                 
@@ -47,7 +40,14 @@ async def handle_read(reader, writer, nick_name, stop_event, users):
                     logger.info(f"Пользователь {nick_name} отправил сообщение")
 
             except (ConnectionResetError, asyncio.IncompleteReadError) as e:
-                logger.error(f"Сетевая ошибка при чтении от {nick_name}: {e}")
+                users.remove_user(writer)
+                print(f"Пользователь [{nick_name}] вышел с сервера")
+                logger.warning(f"Пользователь {nick_name} вышел с сервера, закрыв терминал")
+
+                exit_msg = f"Пользователь [{nick_name}] вышел с сервера"
+                await broadcast(exit_msg, users, "Сервер", exclude_writer=writer)
+                
+                stop_event.set()
                 break
             
             except Exception as e:
