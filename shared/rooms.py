@@ -2,7 +2,6 @@ import asyncio
 from datetime import datetime
 
 from shared.users import ListClients
-from shared.broadcast import broadcast
 
 
 class Room:
