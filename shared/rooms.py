@@ -1,4 +1,3 @@
-import asyncio
 from datetime import datetime
 
 from shared.users import ListClients
@@ -31,6 +30,17 @@ class Room:
 class RoomManager:
     def __init__(self):
         self.rooms = {}
+        self.user_rooms = {}
+
+    def assign_user_to_room(self, writer, room):
+        self.user_rooms[writer] = room
+
+    def get_user_room(self, writer):
+        return self.user_rooms.get(writer)
+    
+    def delete_user_from_rooms(self, writer):
+        if writer in self.user_rooms:
+            del self.user_rooms[writer]
 
     def create_room(self, room_name):
         self.rooms[room_name] = Room(room_name)
