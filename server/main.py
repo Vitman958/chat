@@ -18,7 +18,7 @@ async def main():
     server_name = await ainput("Имя сервера: ")
     
     room = RoomManager()
-    room_name = await ainput("Имя комнаты: ")
+    room_name = "general"
 
     general = room.create_room(room_name)
 
@@ -26,7 +26,7 @@ async def main():
 
     logger.info(f"Создан сервер с именем: {server_name}")
 
-    handler = create_handler(server_name, handle_read, handle_write, broadcast, room)
+    handler = create_handler(users, server_name, handle_read, handle_write, broadcast, room)
 
     server = await asyncio.start_server(
         handler, 'localhost', 8888
