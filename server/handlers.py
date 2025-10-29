@@ -61,15 +61,24 @@ async def handle_read(reader, writer, nick_name, stop_event, users, user_room, r
         logger.error(f"Ошибка запуска handle_read")
 
 
-async def handle_write(writer, server_name, stop_event, users, user_room):
+async def handle_write(writer, server_name, stop_event, users, user_room, room_manager):
     try:
         while True:
             try:
                 if stop_event.is_set():
                     break
                 msg = await ainput()
-                room = user_room
-                await room.send_message(msg, server_name)
+
+                if msg.startswith("/create "):
+                    room_name = msg[8:]
+                    if room_manager.check_room(room_name):
+                        print(f"комнта {room_name} уже создана")
+                    else:
+                        room_manager.create_room(room_name)
+                        print(f"комната {room_name} создана")
+                else:
+                    room = user_room
+                    await room.send_message(msg, server_name)
                 
             except Exception as e:
                 logger.error(f"Сетевая ошибка при отправке от {server_name}: {e}")
