@@ -14,8 +14,9 @@ async def handle_read(reader, writer, nick_name, stop_event, users, user_room, r
     try:
         while True:
             try:
+                room = room_manager.get_user_room(writer)
+                
                 data = await reader.readline()
-                room = user_room
                 msg = data.decode().strip()
 
                 if msg == "/help":
@@ -35,7 +36,22 @@ async def handle_read(reader, writer, nick_name, stop_event, users, user_room, r
                     print(f"Пользователь [{nick_name}] вышел с сервера, используя команду /exit")
                     logger.info(f"Пользователь {nick_name} вышел с сервера")
                     break
-                
+
+                elif msg.startswith("/connect "):
+                    room_name = msg[9:]
+                    if room_manager.check_room(room_name):
+                        room.remove_users(writer)
+
+                        room_manager.delete_user_from_rooms(writer)
+                            
+                        new_room = room_manager.get_room(room_name)
+                        new_room.add_users(writer, nick_name)
+                        room_manager.assign_user_to_room(writer, new_room)
+
+                        room = new_room
+                    else:
+                        writer.write("Такой комнаты не существует\n".encode())
+                        await writer.drain()
                 else:
                     time = datetime.now().strftime("%H:%M")
                     await room.send_message(msg, nick_name, exclude_writer=writer)
