@@ -1,10 +1,8 @@
 import asyncio
-from datetime import datetime
 
 from aioconsole import ainput
 from utils.list_commands import commands
 from utils.logger_setup import get_logger
-from shared.broadcast import broadcast
 
 
 logger = get_logger(__name__)
@@ -53,9 +51,7 @@ async def handle_read(reader, writer, nick_name, stop_event, users, user_room, r
                         writer.write("Такой комнаты не существует\n".encode())
                         await writer.drain()
                 else:
-                    time = datetime.now().strftime("%H:%M")
                     await room.send_message(msg, nick_name, exclude_writer=writer)
-                    print(f"[{time}][{nick_name}]: {msg}")
                     logger.info(f"Пользователь {nick_name} отправил сообщение")
 
             except (ConnectionResetError, asyncio.IncompleteReadError) as e:
@@ -77,27 +73,18 @@ async def handle_read(reader, writer, nick_name, stop_event, users, user_room, r
         logger.error(f"Ошибка запуска handle_read")
 
 
-async def handle_write(writer, server_name, stop_event, users, user_room, room_manager):
+async def handle_server_commands(room_manager):
     try:
-        while True:
-            try:
-                if stop_event.is_set():
-                    break
-                msg = await ainput()
+        while True:                
+            msg = await ainput()
 
-                if msg.startswith("/create "):
-                    room_name = msg[8:]
-                    if room_manager.check_room(room_name):
-                        print(f"комнта {room_name} уже создана")
-                    else:
-                        room_manager.create_room(room_name)
-                        print(f"комната {room_name} создана")
+            if msg.startswith("/create "):
+                room_name = msg[8:]
+                if room_manager.check_room(room_name):
+                    print(f"комнта {room_name} уже создана")
                 else:
-                    room = user_room
-                    await room.send_message(msg, server_name)
-                
-            except Exception as e:
-                logger.error(f"Сетевая ошибка при отправке от {server_name}: {e}")
+                    room_manager.create_room(room_name)
+                    print(f"комната {room_name} создана")
 
     except Exception as e:
-        logger.error(f"Ошибка запуска handle_write")
+        logger.error(f"Ошибка запуска handle_server_commands")

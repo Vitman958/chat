@@ -6,7 +6,7 @@ from utils.logger_setup import get_logger
 logger = get_logger(__name__)
 
 
-def create_handler(users, server_name, handle_read, handle_write, broadcast, room_manager):
+def create_handler(users, server_name, handle_read, room_manager):
     async def handle_client(reader, writer):
         name = await reader.readline()
         nick_name = name.decode().strip()
@@ -36,13 +36,9 @@ def create_handler(users, server_name, handle_read, handle_write, broadcast, roo
         read_task = asyncio.create_task(
             handle_read(reader, writer, nick_name, stop_event, users, user_room, room_manager)
         )
-        write_task = asyncio.create_task(
-            handle_write(writer, server_name, stop_event, users, user_room, room_manager)
-        )
-
+        
         await stop_event.wait()
         await read_task
-        await write_task
         writer.close()
         await writer.wait_closed()
     return handle_client

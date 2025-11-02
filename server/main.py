@@ -1,13 +1,10 @@
 import asyncio
-from datetime import datetime
 
 from aioconsole import ainput
-from server.handlers import handle_read, handle_write
+from server.handlers import handle_read, handle_server_commands
 from server.server_setup import create_handler
 from utils.logger_setup import get_logger
-from utils.list_commands import commands
 from shared.users import ListClients
-from shared.broadcast import broadcast
 from shared.rooms import RoomManager
 
    
@@ -18,15 +15,30 @@ async def main():
     server_name = await ainput("Имя сервера: ")
     
     room = RoomManager()
-    room_name = "general"
+    room.create_room("general")
 
-    general = room.create_room(room_name)
+    while True:
+        print("Настройка сервера\n")
+        setup_cmd = await ainput("Команда (/create или start): ")
+        if setup_cmd == "start":
+            break
+        elif setup_cmd.startswith("/create "):
+            room_name = setup_cmd[8:]
+            if room.check_room(room_name):
+                print(f"комнта {room_name} уже создана")
+            else:
+                room.create_room(room_name)
+                print(f"комната {room_name} создана")
+    
 
     users = ListClients()
 
     logger.info(f"Создан сервер с именем: {server_name}")
 
-    handler = create_handler(users, server_name, handle_read, handle_write, broadcast, room)
+    handler = create_handler(users, server_name, handle_read, room)
+
+    server_task = asyncio.create_task(
+        handle_server_commands(room))
 
     server = await asyncio.start_server(
         handler, 'localhost', 8888
@@ -34,7 +46,11 @@ async def main():
 
 
     async with server:
-        await server.serve_forever()
+        await asyncio.gather(
+            server.serve_forever(), 
+            server_task
+            )
+        
 
 
 if __name__ == '__main__':
