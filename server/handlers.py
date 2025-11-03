@@ -55,7 +55,14 @@ async def handle_read(reader, writer, nick_name, stop_event, users, user_room, r
                     logger.info(f"Пользователь {nick_name} отправил сообщение")
 
             except (ConnectionResetError, asyncio.IncompleteReadError) as e:
+                current_room = room_manager.get_user_room(writer)
+
                 users.remove_user(writer)
+
+                if current_room:
+                    current_room.remove_users(writer)
+                    room_manager.delete_user_from_rooms(writer)
+                    
                 print(f"Пользователь [{nick_name}] вышел с сервера")
                 logger.warning(f"Пользователь {nick_name} вышел с сервера, закрыв терминал")
 
