@@ -32,10 +32,8 @@ def create_handler(users, server_name, handle_read, room_manager):
 
             stop_event = asyncio.Event()
 
-            user_room = room_manager.get_user_room(writer)
-
             read_task = asyncio.create_task(
-                handle_read(reader, writer, nick_name, stop_event, users, user_room, room_manager)
+                handle_read(reader, writer, nick_name, stop_event, users, room_manager)
             )
         
             await stop_event.wait()

@@ -8,11 +8,11 @@ from utils.logger_setup import get_logger
 logger = get_logger(__name__)
 
 
-async def handle_read(reader, writer, nick_name, stop_event, users, user_room, room_manager):
+async def handle_read(reader, writer, nick_name, stop_event, users, room_manager):
     try:
         while True:
             try:
-                room = room_manager.get_user_room(writer)
+                current_room = room_manager.get_user_room(writer)
                 
                 data = await reader.readline()
                 msg = data.decode().strip()
@@ -26,11 +26,11 @@ async def handle_read(reader, writer, nick_name, stop_event, users, user_room, r
                 elif msg == "/exit":
                     stop_event.set()
                     users.remove_user(writer)
-                    room.remove_users(writer)
+                    current_room.remove_users(writer)
                     room_manager.delete_user_from_rooms(writer)
                     
                     info = f"Пользователь [{nick_name}] вышел с сервера"
-                    await room.send_message(info, "Сервер", exclude_writer=writer)
+                    await current_room.send_message(info, "Сервер", exclude_writer=writer)
                     print(f"Пользователь [{nick_name}] вышел с сервера, используя команду /exit")
                     logger.info(f"Пользователь {nick_name} вышел с сервера")
                     break
@@ -38,7 +38,7 @@ async def handle_read(reader, writer, nick_name, stop_event, users, user_room, r
                 elif msg.startswith("/connect "):
                     room_name = msg[9:]
                     if room_manager.check_room(room_name):
-                        room.remove_users(writer)
+                        current_room.remove_users(writer)
 
                         room_manager.delete_user_from_rooms(writer)
                             
@@ -46,12 +46,12 @@ async def handle_read(reader, writer, nick_name, stop_event, users, user_room, r
                         new_room.add_users(writer, nick_name)
                         room_manager.assign_user_to_room(writer, new_room)
 
-                        room = new_room
+                        current_room = new_room
                     else:
                         writer.write("Такой комнаты не существует\n".encode())
                         await writer.drain()
                 else:
-                    await room.send_message(msg, nick_name, exclude_writer=writer)
+                    await current_room.send_message(msg, nick_name, exclude_writer=writer)
                     logger.info(f"Пользователь {nick_name} отправил сообщение")
 
             except (ConnectionResetError, asyncio.IncompleteReadError) as e:
@@ -67,7 +67,7 @@ async def handle_read(reader, writer, nick_name, stop_event, users, user_room, r
                 logger.warning(f"Пользователь {nick_name} вышел с сервера, закрыв терминал")
 
                 exit_msg = f"Пользователь [{nick_name}] вышел с сервера"
-                await room.send_message(exit_msg, "Сервер", exclude_writer=writer)
+                await current_room.send_message(exit_msg, "Сервер", exclude_writer=writer)
                 
                 stop_event.set()
                 break
