@@ -8,6 +8,18 @@ from utils.logger_setup import get_logger
 logger = get_logger(__name__)
 
 
+def remove_user_from_system(writer, room_manager, users):
+    """Удаления пользователя из системы."""
+    current_room = room_manager.get_user_room(writer)
+       
+    if current_room:
+        current_room.remove_users(writer)
+        room_manager.delete_user_from_rooms(writer)
+    
+    users.remove_user(writer)
+    return current_room
+
+
 async def handle_read(reader, writer, nick_name, stop_event, users, room_manager):
     try:
         while True:
@@ -25,9 +37,7 @@ async def handle_read(reader, writer, nick_name, stop_event, users, room_manager
 
                 elif msg == "/exit":
                     stop_event.set()
-                    users.remove_user(writer)
-                    current_room.remove_users(writer)
-                    room_manager.delete_user_from_rooms(writer)
+                    current_room = remove_user_from_system(writer, room_manager, users)
                     
                     info = f"Пользователь [{nick_name}] вышел с сервера"
                     await current_room.send_message(info, "Сервер", exclude_writer=writer)
@@ -55,19 +65,14 @@ async def handle_read(reader, writer, nick_name, stop_event, users, room_manager
                     logger.info(f"Пользователь {nick_name} отправил сообщение")
 
             except (ConnectionResetError, asyncio.IncompleteReadError) as e:
-                current_room = room_manager.get_user_room(writer)
-
-                users.remove_user(writer)
-
-                if current_room:
-                    current_room.remove_users(writer)
-                    room_manager.delete_user_from_rooms(writer)
+                current_room = remove_user_from_system(writer, room_manager, users)
                     
                 print(f"Пользователь [{nick_name}] вышел с сервера")
                 logger.warning(f"Пользователь {nick_name} вышел с сервера, закрыв терминал")
 
-                exit_msg = f"Пользователь [{nick_name}] вышел с сервера"
-                await current_room.send_message(exit_msg, "Сервер", exclude_writer=writer)
+                if current_room:
+                    exit_msg = f"Пользователь [{nick_name}] вышел с сервера"
+                    await current_room.send_message(exit_msg, "Сервер", exclude_writer=writer)
                 
                 stop_event.set()
                 break
