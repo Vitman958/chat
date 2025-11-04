@@ -60,6 +60,28 @@ async def handle_read(reader, writer, nick_name, stop_event, users, room_manager
                     else:
                         writer.write("Такой комнаты не существует\n".encode())
                         await writer.drain()
+                    
+                elif msg == "/leave":
+                    if current_room.room == "general":
+                        writer.write(f"Вы уже находитесь в главной комнате\n".encode())
+                        await writer.drain()
+                        continue
+
+                    leave_msg = f"Пользователь [{nick_name}] покинул комнату"
+                    await current_room.send_message(leave_msg, "Сервер", exclude_writer=writer)
+
+                    current_room.remove_users(writer)
+                    room_manager.delete_user_from_rooms(writer)
+
+                    default_room = room_manager.get_room("general")
+                    default_room.add_users(writer, nick_name)
+                    room_manager.assign_user_to_room(writer, default_room)
+
+                    enter_msg = f"Пользователь [{nick_name}] вошел в главную комнату"
+                    await default_room.send_message(enter_msg, "Сервер", exclude_writer=writer)
+
+                    writer.write("Вы вернулись в главную комнату\n".encode())
+                    await writer.drain()
 
                 elif msg == "/rooms":
                     all_rooms = room_manager.get_rooms()
