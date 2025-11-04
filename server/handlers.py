@@ -60,6 +60,14 @@ async def handle_read(reader, writer, nick_name, stop_event, users, room_manager
                     else:
                         writer.write("Такой комнаты не существует\n".encode())
                         await writer.drain()
+
+                elif msg == "/rooms":
+                    all_rooms = room_manager.get_rooms()
+                    room_names = list(all_rooms.keys())
+                    rooms_list = ", ".join(room_names)
+                    writer.write(f"Список комнат: {rooms_list}\n".encode())
+                    await writer.drain()
+
                 else:
                     await current_room.send_message(msg, nick_name, exclude_writer=writer)
                     logger.info(f"Пользователь {nick_name} отправил сообщение")
