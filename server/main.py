@@ -12,13 +12,13 @@ logger = get_logger(__name__)
 
 
 async def main():
-    server_name = await ainput("Имя сервера: ")
+    server_name = await ainput("Имя сервера: \n")
     
     room = RoomManager()
     room.create_room("general")
 
     while True:
-        print("Настройка сервера\n")
+        print("Настройка сервера")
         setup_cmd = await ainput("Команда (/create или start): ")
         if setup_cmd == "start":
             break
@@ -34,6 +34,7 @@ async def main():
     users = ListClients()
 
     logger.info(f"Создан сервер с именем: {server_name}")
+    print(f"Сервер {server_name} успешно создан")
 
     handler = create_handler(users, server_name, handle_read, room)
 
