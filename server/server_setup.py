@@ -26,6 +26,8 @@ def create_handler(users, server_name, handle_read, room_manager):
                 return
 
             connection_msg = f"Пользователь [{nick_name}] подключился к серверу"
+            writer.write(f"Добро пожаловать на сервер {server_name}\n".encode())
+            await writer.drain()
             await default_room.send_message(connection_msg, server_name, exclude_writer = writer)
             print(f"Пользователь [{nick_name}] подключился на сервер")
             logger.info(f"Пользователь {nick_name} подключился к серверу")
