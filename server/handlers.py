@@ -48,8 +48,10 @@ async def handle_read(reader, writer, nick_name, stop_event, users, room_manager
                 elif msg.startswith("/connect "):
                     room_name = msg[9:]
                     if room_manager.check_room(room_name):
-                        current_room.remove_users(writer)
+                        leave_msg = f"Пользователь [{nick_name}] покинул комнату"
+                        await current_room.send_message(leave_msg, "Сервер", exclude_writer=writer)
 
+                        current_room.remove_users(writer)
                         room_manager.delete_user_from_rooms(writer)
                             
                         new_room = room_manager.get_room(room_name)
@@ -57,6 +59,13 @@ async def handle_read(reader, writer, nick_name, stop_event, users, room_manager
                         room_manager.assign_user_to_room(writer, new_room)
 
                         current_room = new_room
+
+                        writer.write(f"Вы присоединились к комнате [{room_name}]\n".encode())
+                        await writer.drain()
+
+                        connect_msg = f"Пользователь [{nick_name}] присоединился к комнате"
+                        await current_room.send_message(connect_msg, "Сервер", exclude_writer=writer)
+
                     else:
                         writer.write("Такой комнаты не существует\n".encode())
                         await writer.drain()
