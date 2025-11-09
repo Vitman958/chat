@@ -1,5 +1,6 @@
 import asyncio
 
+from utils.list_commands import commands
 from utils.logger_setup import get_logger
 
 
@@ -26,8 +27,13 @@ def create_handler(users, server_name, handle_read, room_manager):
                 return
 
             connection_msg = f"Пользователь [{nick_name}] подключился к серверу"
-            writer.write(f"Добро пожаловать на сервер {server_name}\n".encode())
+
+            welcome_msg = f"Добро пожаловать на сервер {server_name}!\n\nДоступные команды:\n" + \
+              "\n".join([f"  • {cmd}" for cmd in commands]) + "\n"
+
+            writer.write(welcome_msg.encode())
             await writer.drain()
+
             await default_room.send_message(connection_msg, server_name, exclude_writer = writer)
             print(f"Пользователь [{nick_name}] подключился на сервер")
             logger.info(f"Пользователь {nick_name} подключился к серверу")
