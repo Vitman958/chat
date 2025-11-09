@@ -60,19 +60,19 @@ async def handle_read(reader, writer, nick_name, stop_event, users, room_manager
 
                         current_room = new_room
 
-                        writer.write(f"Вы присоединились к комнате [{room_name}]\n".encode())
+                        writer.write(f"✅ Вы присоединились к комнате [{room_name}]\n".encode())
                         await writer.drain()
 
                         connect_msg = f"Пользователь [{nick_name}] присоединился к комнате"
                         await current_room.send_message(connect_msg, "Сервер", exclude_writer=writer)
 
                     else:
-                        writer.write("Такой комнаты не существует\n".encode())
+                        writer.write("❌ Такой комнаты не существует\n".encode())
                         await writer.drain()
                     
                 elif msg == "/leave":
                     if current_room.room == "general":
-                        writer.write(f"Вы уже находитесь в главной комнате\n".encode())
+                        writer.write("❌ Вы уже находитесь в главной комнате\n".encode())
                         await writer.drain()
                         continue
 
@@ -89,14 +89,15 @@ async def handle_read(reader, writer, nick_name, stop_event, users, room_manager
                     enter_msg = f"Пользователь [{nick_name}] вошел в главную комнату"
                     await default_room.send_message(enter_msg, "Сервер", exclude_writer=writer)
 
-                    writer.write("Вы вернулись в главную комнату\n".encode())
+                    writer.write("✅ Вы вернулись в главную комнату\n".encode())
                     await writer.drain()
 
                 elif msg == "/rooms":
                     all_rooms = room_manager.get_rooms()
                     room_names = list(all_rooms.keys())
-                    rooms_list = ", ".join(room_names)
-                    writer.write(f"Список комнат: {rooms_list}\n".encode())
+                    rooms_list = "\n  • ".join(room_names)
+                    response = f"Доступные комнаты:\n  • {rooms_list}\n"
+                    writer.write(response.encode())
                     await writer.drain()
 
                 else:
