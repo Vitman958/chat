@@ -21,7 +21,7 @@ def create_handler(users, server_name, handle_read, room_manager):
                 room_manager.assign_user_to_room(writer, default_room)
 
             else:
-                writer.write(f"Этот никней уже занят\n".encode())
+                writer.write(f"❌ Этот никней уже занят\n".encode())
                 await writer.drain()
                 writer.close()
                 return
