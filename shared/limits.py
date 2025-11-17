@@ -1,4 +1,4 @@
-from datetime import time
+import time
 
 
 class RateLimiter:
@@ -19,4 +19,13 @@ class RateLimiter:
             if diff_time < (1 / self.max_messages_per_second):
                 return False, f"Превышена частота отправки сообщений"
 
-        return True
+        return True, ""
+    
+    def update_time(self, writer):
+        self.user_timestamps[writer] = time.time()
+
+    def remove_user(self, writer):
+        if writer in self.user_timestamps:
+            del self.user_timestamps[writer]
+
+     
