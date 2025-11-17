@@ -6,6 +6,7 @@ from server.server_setup import create_handler
 from utils.logger_setup import get_logger
 from shared.users import ListClients
 from shared.rooms import RoomManager
+from shared.limits import RateLimiter
 
    
 logger = get_logger(__name__)
@@ -32,11 +33,12 @@ async def main():
     
 
     users = ListClients()
+    rate_limiter = RateLimiter()
 
     logger.info(f"Создан сервер с именем: {server_name}")
     print(f"Сервер {server_name} успешно создан")
 
-    handler = create_handler(users, server_name, handle_read, room)
+    handler = create_handler(users, server_name, handle_read, room, rate_limiter)
 
     server_task = asyncio.create_task(
         handle_server_commands(room))
@@ -52,7 +54,6 @@ async def main():
             server_task
             )
         
-
 
 if __name__ == '__main__':
     asyncio.run(main())
