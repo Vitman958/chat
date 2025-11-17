@@ -7,7 +7,7 @@ from utils.logger_setup import get_logger
 logger = get_logger(__name__)
 
 
-def create_handler(users, server_name, handle_read, room_manager):
+def create_handler(users, server_name, handle_read, room_manager, rate_limiter):
     async def handle_client(reader, writer):
         try:
             name = await reader.readline()
@@ -41,7 +41,7 @@ def create_handler(users, server_name, handle_read, room_manager):
             stop_event = asyncio.Event()
 
             read_task = asyncio.create_task(
-                handle_read(reader, writer, nick_name, stop_event, users, room_manager)
+                handle_read(reader, writer, nick_name, stop_event, users, room_manager, rate_limiter)
             )
         
             await stop_event.wait()
