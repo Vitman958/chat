@@ -19,7 +19,7 @@
 
        Remove-Item -Recurse -Force __pycache__
 
-       Remove-Item -Recurse -Force server\__pycache__
+        Remove-Item -Recurse -Force server\__pycache__
 
        Remove-Item -Recurse -Force client\__pycache__
 
