@@ -20,7 +20,7 @@ def remove_user_from_system(writer, room_manager, users):
     return current_room
 
 
-async def handle_read(reader, writer, nick_name, stop_event, users, room_manager):
+async def handle_read(reader, writer, nick_name, stop_event, users, room_manager, rate_limiter):
     try:
         while True:
             try:
@@ -28,6 +28,14 @@ async def handle_read(reader, writer, nick_name, stop_event, users, room_manager
                 
                 data = await reader.readline()
                 msg = data.decode().strip()
+
+                if not msg.startswith("/"):
+                    allowed, error_msg = rate_limiter.can_send_message(writer, msg)
+                    if not allowed:
+                        writer.write(f"❌ {error_msg}\n".encode())
+                        await writer.drain()
+                        continue
+                    rate_limiter.update_time(writer)                
 
                 if msg == "/help":
                     for command in commands:
