@@ -16,25 +16,37 @@
 
 Если код будет работать странно, то нужно очистить кэш
 1) Для PowerShell:
+
+       Remove-Item -Recurse -Force __pycache__
+
+       Remove-Item -Recurse -Force server\__pycache__
+
+       Remove-Item -Recurse -Force client\__pycache__
+
+       Remove-Item -Recurse -Force utils\__pycache__
+
+       Remove-Item -Recurse -Force shared\__pycache__
     
-        Remove-Item -Recurse -Force __pycache__
-        Remove-Item -Recurse -Force server\__pycache__
-        Remove-Item -Recurse -Force client\__pycache__
-        Remove-Item -Recurse -Force utils\__pycache__
-        Remove-Item -Recurse -Force shared\__pycache__
-    
-2) Для Linux/Mac:
+3) Для Linux/Mac:
 
        rm -rf __pycache__
+
        rm -rf server/__pycache__
+
        rm -rf client/__pycache__
+
        rm -rf utils/__pycache__
+
        rm -rf shared/__pycache__
 
-3) Для Windows (Command Prompt):
+5) Для Windows (Command Prompt):
 
-        rmdir /s /q __pycache__
-        rmdir /s /q server\__pycache__
-        rmdir /s /q client\__pycache__
-        rmdir /s /q utils\__pycache__
-        rmdir /s /q shared\__pycache__
+       rmdir /s /q __pycache__
+
+       rmdir /s /q server\__pycache__
+
+       rmdir /s /q client\__pycache__
+
+       rmdir /s /q utils\__pycache__
+
+       rmdir /s /q shared\__pycache__
