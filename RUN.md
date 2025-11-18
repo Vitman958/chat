@@ -15,15 +15,24 @@
     pyinstaller --onefile --add-data "utils;utils" --add-data "shared;shared" --add-data "client;client" --name client_app client/main.py
 
 Если код будет работать странно, то нужно очистить кэш
-1) Для PowerShell:
+1) Для Powershell:
+       powershell:
 
-       Remove-Item -Recurse -Force __pycache__
+           Remove-Item -Recurse -Force __pycache__
 
-        Remove-Item -Recurse -Force server\__pycache__
+   powershell:
+
+       Remove-Item -Recurse -Force server\__pycache__
+
+   powershell:
 
        Remove-Item -Recurse -Force client\__pycache__
 
+   powershell:
+
        Remove-Item -Recurse -Force utils\__pycache__
+
+   powershell:
 
        Remove-Item -Recurse -Force shared\__pycache__
     
