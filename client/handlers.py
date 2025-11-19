@@ -10,15 +10,21 @@ async def handle_read(reader, stop_event):
 
 async def handle_write(writer, stop_event):
     while True:
-        msg = await ainput()
-        if msg == "/exit":
+        try:
+            msg = await ainput()
+            if msg == "/exit":
+                writer.write(f"{msg}\n".encode())
+                print("Выход с сервера")
+                await writer.drain()
+                writer.close()
+                await writer.wait_closed()
+                stop_event.set()
+                break
+            
             writer.write(f"{msg}\n".encode())
-            print("Выход с сервера")
             await writer.drain()
-            writer.close()
-            await writer.wait_closed()
+
+        except ConnectionResetError:
+            print("❌ Разоравно соединение с сервером")
             stop_event.set()
-            break
-        
-        writer.write(f"{msg}\n".encode())
-        await writer.drain()
+            break 
