@@ -10,7 +10,7 @@ def check_nickname(nick_name):
         return False, f"Недопустимые символы"
     
     if len(nick_name) < 3 or len(nick_name) > 16:
-        return False, f"Превышена длина никнейма"
+        return False, f"Недопустимая длина никнейма"
 
     return True, ""
     
