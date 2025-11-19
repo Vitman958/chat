@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from aioconsole import ainput
 
 async def handle_read(reader, stop_event):
@@ -10,7 +8,7 @@ async def handle_read(reader, stop_event):
         print(data.decode().strip())
 
 
-async def handle_write(writer, nick_name, stop_event):
+async def handle_write(writer, stop_event):
     while True:
         msg = await ainput()
         if msg == "/exit":
