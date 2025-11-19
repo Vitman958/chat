@@ -13,7 +13,7 @@ async def main():
     writer.write((nick_name + '\n').encode())
     await writer.drain()
 
-    asyncio.create_task(handle_write(writer, nick_name, stop_event))
+    asyncio.create_task(handle_write(writer, stop_event))
 
     await stop_event.wait()
 
