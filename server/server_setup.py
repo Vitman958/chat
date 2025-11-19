@@ -2,6 +2,7 @@ import asyncio
 
 from utils.list_commands import commands
 from utils.logger_setup import get_logger
+from utils.check_nickname import check_nickname
 
 
 logger = get_logger(__name__)
@@ -12,6 +13,13 @@ def create_handler(users, server_name, handle_read, room_manager, rate_limiter):
         try:
             name = await reader.readline()
             nick_name = name.decode().strip()
+
+            allowed, error_msg = check_nickname(nick_name)
+            if not allowed:
+                writer.write(f"❌ {error_msg}\n".encode())
+                await writer.drain()
+                writer.close()
+                return
 
             default_room = room_manager.get_room("general")
 
