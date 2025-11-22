@@ -20,7 +20,7 @@ def remove_user_from_system(writer, room_manager, users):
     return current_room
 
 
-async def handle_read(reader, writer, nick_name, stop_event, users, room_manager, rate_limiter):
+async def handle_read(reader, writer, nick_name, stop_event, users, room_manager, rate_limiter, command_handler):
     try:
         while True:
             try:
@@ -29,7 +29,14 @@ async def handle_read(reader, writer, nick_name, stop_event, users, room_manager
                 data = await reader.readline()
                 msg = data.decode().strip()
 
-                if not msg.startswith("/"):
+                if msg.startswith("/"):
+                    response = await handle_command(writer, msg, command_handler, users, stop_event, room_manager, current_room, nick_name)   
+                    if response:
+                        continue
+                    else:
+                        writer.write(f"❌Такой команды не существует!\n".encode())
+
+                else:
                     allowed, error_msg = rate_limiter.can_send_message(writer, msg)
                     if not allowed:
                         writer.write(f"❌ {error_msg}\n".encode())
@@ -37,80 +44,8 @@ async def handle_read(reader, writer, nick_name, stop_event, users, room_manager
                         continue
                     rate_limiter.update_time(writer)                
 
-                if msg == "/help":
-                    for command in commands:
-                        writer.write(f"[Сервер]: {command}\n".encode())
-                        await writer.drain()
-                        logger.info(f"Пользователь [{nick_name} запросил справку]")
-
-                elif msg == "/exit":
-                    stop_event.set()
-                    current_room = remove_user_from_system(writer, room_manager, users)
-                    
-                    info = f"Пользователь [{nick_name}] вышел с сервера"
-                    await current_room.send_message(info, "Сервер", exclude_writer=writer)
-                    print(f"Пользователь [{nick_name}] вышел с сервера, используя команду /exit")
-                    logger.info(f"Пользователь {nick_name} вышел с сервера")
-                    break
-
-                elif msg.startswith("/connect "):
-                    room_name = msg[9:]
-                    if room_manager.check_room(room_name):
-                        leave_msg = f"Пользователь [{nick_name}] покинул комнату"
-                        await current_room.send_message(leave_msg, "Сервер", exclude_writer=writer)
-
-                        current_room.remove_users(writer)
-                        room_manager.delete_user_from_rooms(writer)
-                            
-                        new_room = room_manager.get_room(room_name)
-                        new_room.add_users(writer, nick_name)
-                        room_manager.assign_user_to_room(writer, new_room)
-
-                        current_room = new_room
-
-                        writer.write(f"✅ Вы присоединились к комнате [{room_name}]\n".encode())
-                        await writer.drain()
-
-                        connect_msg = f"Пользователь [{nick_name}] присоединился к комнате"
-                        await current_room.send_message(connect_msg, "Сервер", exclude_writer=writer)
-
-                    else:
-                        writer.write("❌ Такой комнаты не существует\n".encode())
-                        await writer.drain()
-                    
-                elif msg == "/leave":
-                    if current_room.room == "general":
-                        writer.write("❌ Вы уже находитесь в главной комнате\n".encode())
-                        await writer.drain()
-                        continue
-
-                    leave_msg = f"Пользователь [{nick_name}] покинул комнату"
-                    await current_room.send_message(leave_msg, "Сервер", exclude_writer=writer)
-
-                    current_room.remove_users(writer)
-                    room_manager.delete_user_from_rooms(writer)
-
-                    default_room = room_manager.get_room("general")
-                    default_room.add_users(writer, nick_name)
-                    room_manager.assign_user_to_room(writer, default_room)
-
-                    enter_msg = f"Пользователь [{nick_name}] вошел в главную комнату"
-                    await default_room.send_message(enter_msg, "Сервер", exclude_writer=writer)
-
-                    writer.write("✅ Вы вернулись в главную комнату\n".encode())
-                    await writer.drain()
-
-                elif msg == "/rooms":
-                    all_rooms = room_manager.get_rooms()
-                    room_names = list(all_rooms.keys())
-                    rooms_list = "\n  • ".join(room_names)
-                    response = f"Доступные комнаты:\n  • {rooms_list}\n"
-                    writer.write(response.encode())
-                    await writer.drain()
-
-                else:
-                    await current_room.send_message(msg, nick_name, exclude_writer=writer)
-                    logger.info(f"Пользователь {nick_name} отправил сообщение")
+                await current_room.send_message(msg, nick_name, exclude_writer=writer)
+                logger.info(f"Пользователь {nick_name} отправил сообщение")
 
             except (ConnectionResetError, asyncio.IncompleteReadError) as e:
                 current_room = remove_user_from_system(writer, room_manager, users)
@@ -148,3 +83,58 @@ async def handle_server_commands(room_manager):
 
     except Exception as e:
         logger.error(f"Ошибка запуска handle_server_commands")
+
+
+async def handle_command(writer, msg, command_handler, users, stop_event, room_manager, current_room, nick_name):
+    command_name = msg.split()[0]
+
+    if command_name in command_handler.commands:
+        if command_name == "/help":
+            await command_handler._handle_help(
+                writer,
+                nick_name,
+                commands, 
+                logger
+            )
+            return True
+
+        elif command_name == "/exit":
+            await command_handler._handle_exit(
+                writer,
+                users,
+                room_manager,
+                stop_event,
+                current_room,
+                nick_name,
+                remove_user_from_system,
+                logger
+            )   
+            return True
+        
+        elif command_name == "/connect":
+            await command_handler._handle_connect(
+                writer,
+                msg,
+                room_manager,
+                current_room,
+                nick_name
+            )
+            return True
+        
+        elif command_name == "/leave":
+            await command_handler._handle_leave(
+                writer,
+                room_manager,
+                current_room,
+                nick_name
+            )
+            return True
+        
+        elif command_name == "/rooms":
+            await command_handler._handle_rooms(
+                writer,
+                room_manager
+            )
+            return True
+        
+    return False
