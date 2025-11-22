@@ -88,53 +88,17 @@ async def handle_server_commands(room_manager):
 async def handle_command(writer, msg, command_handler, users, stop_event, room_manager, current_room, nick_name):
     command_name = msg.split()[0]
 
-    if command_name in command_handler.commands:
-        if command_name == "/help":
-            await command_handler._handle_help(
-                writer,
-                nick_name,
-                commands, 
-                logger
-            )
-            return True
-
-        elif command_name == "/exit":
-            await command_handler._handle_exit(
-                writer,
-                users,
-                room_manager,
-                stop_event,
-                current_room,
-                nick_name,
-                remove_user_from_system,
-                logger
-            )   
-            return True
-        
-        elif command_name == "/connect":
-            await command_handler._handle_connect(
-                writer,
-                msg,
-                room_manager,
-                current_room,
-                nick_name
-            )
-            return True
-        
-        elif command_name == "/leave":
-            await command_handler._handle_leave(
-                writer,
-                room_manager,
-                current_room,
-                nick_name
-            )
-            return True
-        
-        elif command_name == "/rooms":
-            await command_handler._handle_rooms(
-                writer,
-                room_manager
-            )
-            return True
-        
-    return False
+    result = await command_handler.execute_command(
+        command_name=command_name,
+        writer=writer,
+        msg=msg,
+        users=users,
+        stop_event=stop_event,
+        room_manager=room_manager,
+        current_room=current_room,
+        nick_name=nick_name,
+        remove_user_from_system=remove_user_from_system,
+        commands=commands,
+        logger=logger
+    )
+    return result
