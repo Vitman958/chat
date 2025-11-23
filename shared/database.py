@@ -7,9 +7,8 @@ class DatabaseManager:
 
     async def init_db(self):
         async with aiosqlite.connect(self.db_path) as con:
-            cursor = con.cursor()
 
-            await cursor.execute("""
+            await con.execute("""
             CREATE TABLE IF NOT EXISTS Messages(
                 id INTEGER PRIMARY KEY,
                 room_name TEXT NOT NULL,
@@ -23,9 +22,8 @@ class DatabaseManager:
 
     async def save_message(self, room_name, sender, message, timestamp):
         async with aiosqlite.connect(self.db_path) as con:
-            cursor = con.cursor()
 
-            await cursor.execute("""
+            await con.execute("""
             INSERT INTO Messages (room_name, sender, message, timestamp)
             VALUES (?, ?, ?, ?)
             """, (room_name, sender, message, timestamp))
@@ -34,15 +32,12 @@ class DatabaseManager:
 
     async def get_messages(self, room_name, limit=100):
         async with aiosqlite.connect(self.db_path) as con:
-            cursor = con.cursor()
-
-            await cursor.execute("""
+            cursor = await con.execute("""
             SELECT timestamp, sender, message FROM Messages 
             WHERE room_name = ?
             ORDER BY id DESC
             LIMIT ?
             """, (room_name, limit))
-
 
             messages = await cursor.fetchall()
             return messages
