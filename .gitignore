@@ -4,3 +4,4 @@ dist
 build
 client_app.spec
 server_app.spec
+chat.db
