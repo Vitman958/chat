@@ -38,6 +38,8 @@ async def main():
     rate_limiter = RateLimiter()
     command_handler = CommandHandler()
     database_manager = DatabaseManager()
+    
+    await database_manager.init_db()
 
     logger.info(f"Создан сервер с именем: {server_name}")
     print(f"Сервер {server_name} успешно создан")
