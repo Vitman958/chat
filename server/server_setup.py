@@ -42,6 +42,12 @@ def create_handler(users, server_name, handle_read, room_manager, rate_limiter, 
             writer.write(welcome_msg.encode())
             await writer.drain()
 
+            messages = await database_manager.get_messages(room_name="general")
+            for timestamp, sender, message in messages:
+                formatted_msg = f"[{timestamp}][{sender}]: {message}\n"
+                writer.write(formatted_msg.encode())
+                await writer.drain()
+
             await default_room.send_message(connection_msg, server_name, exclude_writer = writer)
             print(f"Пользователь [{nick_name}] подключился на сервер")
             logger.info(f"Пользователь {nick_name} подключился к серверу")
