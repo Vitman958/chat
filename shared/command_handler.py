@@ -50,6 +50,7 @@ class CommandHandler:
         room_manager = kwargs["room_manager"]
         current_room = kwargs["current_room"]
         nick_name = kwargs["nick_name"]
+        database_manager = kwargs["database_manager"]
 
         room_name = msg[9:]
         if room_manager.check_room(room_name):
@@ -64,6 +65,12 @@ class CommandHandler:
             room_manager.assign_user_to_room(writer, new_room)
 
             current_room = new_room
+
+            messages = await database_manager.get_messages(room_name)
+            for timestamp, sender, message in messages:
+                formatted_msg = f"[{timestamp}][{sender}]: {message}\n"
+                writer.write(formatted_msg.encode())
+                await writer.drain()
 
             writer.write(f"✅ Вы присоединились к комнате [{room_name}]\n".encode())
             await writer.drain()
@@ -80,6 +87,7 @@ class CommandHandler:
         room_manager = kwargs["room_manager"]
         current_room = kwargs["current_room"]
         nick_name = kwargs["nick_name"]
+        database_manager = kwargs["database_manager"]
 
         if current_room.room == "general":
             writer.write("❌ Вы уже находитесь в главной комнате\n".encode())
@@ -98,6 +106,12 @@ class CommandHandler:
 
         enter_msg = f"Пользователь [{nick_name}] вошел в главную комнату"
         await default_room.send_message(enter_msg, "Сервер", exclude_writer=writer)
+
+        messages = await database_manager.get_messages(room_name="general")
+        for timestamp, sender, message in messages:
+            formatted_msg = f"[{timestamp}][{sender}]: {message}\n"
+            writer.write(formatted_msg.encode())
+            await writer.drain()
 
         writer.write("✅ Вы вернулись в главную комнату\n".encode())
         await writer.drain()
