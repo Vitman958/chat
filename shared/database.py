@@ -6,9 +6,9 @@ class DatabaseManager:
         self.db_path = db_path
 
     async def init_db(self):
-        async with aiosqlite.connect(self.db_path) as cursor:
+        async with aiosqlite.connect(self.db_path) as con:
 
-            await cursor.execute("""
+            await con.execute("""
             CREATE TABLE IF NOT EXISTS messages(
                 id INTEGER PRIMARY KEY,
                 room_name TEXT NOT NULL,
@@ -18,4 +18,14 @@ class DatabaseManager:
             )
             """)
             
-            await cursor.commit()
+            await con.commit()
+
+    async def save_message(self, room_name, sender, message, timestamp):
+        async with aiosqlite.connect(self.db_path) as con:
+
+            await con.execute("""
+            INSERT INTO messages (room_name, sender, message, timestamp)
+            VALUES (?, ?, ?, ?)
+            """, (room_name, sender, message, timestamp))
+
+            await con.commit()
