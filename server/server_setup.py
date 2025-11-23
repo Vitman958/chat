@@ -8,7 +8,7 @@ from utils.check_nickname import check_nickname
 logger = get_logger(__name__)
 
 
-def create_handler(users, server_name, handle_read, room_manager, rate_limiter, command_handler):
+def create_handler(users, server_name, handle_read, room_manager, rate_limiter, command_handler, database_manager):
     async def handle_client(reader, writer):
         try:
             name = await reader.readline()
@@ -49,7 +49,7 @@ def create_handler(users, server_name, handle_read, room_manager, rate_limiter, 
             stop_event = asyncio.Event()
 
             read_task = asyncio.create_task(
-                handle_read(reader, writer, nick_name, stop_event, users, room_manager, rate_limiter, command_handler)
+                handle_read(reader, writer, nick_name, stop_event, users, room_manager, rate_limiter, command_handler, database_manager)
             )
         
             await stop_event.wait()
