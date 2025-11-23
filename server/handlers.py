@@ -31,7 +31,7 @@ async def handle_read(reader, writer, nick_name, stop_event, users, room_manager
                 msg = data.decode().strip()
 
                 if msg.startswith("/"):
-                    response = await handle_command(writer, msg, command_handler, users, stop_event, room_manager, current_room, nick_name)   
+                    response = await handle_command(writer, msg, command_handler, users, stop_event, room_manager, current_room, nick_name, database_manager)   
                     if response:
                         continue
                     else:
@@ -96,7 +96,7 @@ async def handle_server_commands(room_manager):
         logger.error(f"Ошибка запуска handle_server_commands")
 
 
-async def handle_command(writer, msg, command_handler, users, stop_event, room_manager, current_room, nick_name):
+async def handle_command(writer, msg, command_handler, users, stop_event, room_manager, current_room, nick_name, database_manager):
     command_name = msg.split()[0]
 
     result = await command_handler.execute_command(
@@ -108,6 +108,7 @@ async def handle_command(writer, msg, command_handler, users, stop_event, room_m
         room_manager=room_manager,
         current_room=current_room,
         nick_name=nick_name,
+        database_manager=database_manager,
         remove_user_from_system=remove_user_from_system,
         commands=commands,
         logger=logger
