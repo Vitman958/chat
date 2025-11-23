@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime
 
 from aioconsole import ainput
 from utils.list_commands import commands
@@ -20,7 +21,7 @@ def remove_user_from_system(writer, room_manager, users):
     return current_room
 
 
-async def handle_read(reader, writer, nick_name, stop_event, users, room_manager, rate_limiter, command_handler):
+async def handle_read(reader, writer, nick_name, stop_event, users, room_manager, rate_limiter, command_handler, database_manager):
     try:
         while True:
             try:
@@ -43,6 +44,16 @@ async def handle_read(reader, writer, nick_name, stop_event, users, room_manager
                         await writer.drain()
                         continue
                     rate_limiter.update_time(writer)                
+
+                
+                if current_room:
+                    room_name = current_room.room
+                    await database_manager.save_message(
+                        room_name=room_name,
+                        sender=nick_name,
+                        message=msg,
+                        timestamp=datetime.now().strftime("%H:%M")
+                    )
 
                 await current_room.send_message(msg, nick_name, exclude_writer=writer)
                 logger.info(f"Пользователь {nick_name} отправил сообщение")
