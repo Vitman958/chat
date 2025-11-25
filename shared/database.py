@@ -1,5 +1,7 @@
 import aiosqlite
 
+from shared.security import hash_password, verify_password
+
 
 class DatabaseManager:
     def __init__(self, db_path="chat.db"):
@@ -51,12 +53,14 @@ class DatabaseManager:
             messages = await cursor.fetchall()
             return messages
         
-    async def save_user(self, nick_name, password_hash):
+    async def save_user(self, nick_name, password):
+        hash = hash_password(password)
+
         async with aiosqlite.connect(self.db_path) as con:
 
             await con.execute("""
             INSERT INTO Users (username, password_hash)
             VALUES (?, ?)
-            """, (nick_name, password_hash))
+            """, (nick_name, hash))
 
             await con.commit
