@@ -50,3 +50,13 @@ class DatabaseManager:
 
             messages = await cursor.fetchall()
             return messages
+        
+    async def save_user(self, nick_name, password_hash):
+        async with aiosqlite.connect(self.db_path) as con:
+
+            await con.execute("""
+            INSERT INTO Users (username, password_hash)
+            VALUES (?, ?)
+            """, (nick_name, password_hash))
+
+            await con.commit
