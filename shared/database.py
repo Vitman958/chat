@@ -17,6 +17,15 @@ class DatabaseManager:
                 timestamp TEXT NOT NULL                       
             )
             """)
+
+            await con.execute("""
+            CREATE TABLE IF NOT EXISTS Users(
+                id INTEGER PRIMARY KEY,
+                username TEXT UNIQUE NOT NULL,
+                password_hash TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            """)
             
             await con.commit()
 
