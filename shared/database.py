@@ -54,13 +54,29 @@ class DatabaseManager:
             return messages
         
     async def save_user(self, nick_name, password):
-        hash = hash_password(password)
+        password_hash = hash_password(password)
 
         async with aiosqlite.connect(self.db_path) as con:
 
             await con.execute("""
             INSERT INTO Users (username, password_hash)
             VALUES (?, ?)
-            """, (nick_name, hash))
+            """, (nick_name, password_hash))
 
             await con.commit
+
+    async def verify_user(self, nick_name, password):
+
+        async with aiosqlite.connect(self.db_path) as con:
+            cursor = await con.execute("""
+            SELECT password_hash FROM Users
+            WHERE username = ?
+            """, (nick_name))
+
+            user = await cursor.fetchone()
+            if user is None:
+                return False
+
+            password_hash = user[0]
+
+            return verify_password(password, password_hash)
