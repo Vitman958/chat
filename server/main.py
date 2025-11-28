@@ -9,6 +9,7 @@ from shared.rooms import RoomManager
 from shared.limits import RateLimiter
 from shared.command_handler import CommandHandler
 from shared.database import DatabaseManager
+from shared.auth_manager import AuthManager
 
    
 logger = get_logger(__name__)
@@ -38,13 +39,14 @@ async def main():
     rate_limiter = RateLimiter()
     command_handler = CommandHandler()
     database_manager = DatabaseManager()
+    auth_manager = AuthManager()
     
     await database_manager.init_db()
 
     logger.info(f"Создан сервер с именем: {server_name}")
     print(f"Сервер {server_name} успешно создан")
 
-    handler = create_handler(users, server_name, handle_read, room, rate_limiter, command_handler, database_manager)
+    handler = create_handler(users, server_name, handle_read, room, rate_limiter, command_handler, database_manager, auth_manager)
 
     server_task = asyncio.create_task(
         handle_server_commands(room))
