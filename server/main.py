@@ -39,7 +39,7 @@ async def main():
     rate_limiter = RateLimiter()
     command_handler = CommandHandler()
     database_manager = DatabaseManager()
-    auth_manager = AuthManager()
+    auth_manager = AuthManager(database_manager)
     
     await database_manager.init_db()
 
