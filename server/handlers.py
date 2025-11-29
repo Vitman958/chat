@@ -33,7 +33,7 @@ async def handle_read(reader, writer, nick_name, stop_event, users, room_manager
 
                 if msg.startswith("/"):
                     if not auth_manager.is_authenticated(writer) and msg.split()[0] not in NO_AUTH_COMMANDS:
-                        writer.write("❌ Введите /login или /register для аутентификации\n".encode())
+                        writer.write("❌ Введите /login [username] [password] для входа\n❌ Введите /register [username] [password] для аутентификации\n".encode())
                         await writer.drain()
                         continue
                 
@@ -54,18 +54,19 @@ async def handle_read(reader, writer, nick_name, stop_event, users, room_manager
                 
                 if current_room:
                     room_name = current_room.room
-                    await database_manager.save_message(
-                        room_name=room_name,
-                        sender=nick_name,
-                        message=msg,
-                        timestamp=datetime.now().strftime("%H:%M")
-                    )
+                    if auth_manager.is_authenticated(writer):
+                        await database_manager.save_message(
+                            room_name=room_name,
+                            sender=nick_name,
+                            message=msg,
+                            timestamp=datetime.now().strftime("%H:%M")
+                        )
 
                 if auth_manager.is_authenticated(writer):
                     await current_room.send_message(msg, nick_name, exclude_writer=writer)
                     logger.info(f"Пользователь {nick_name} отправил сообщение")
                 else:
-                    writer.write("❌ Введите /login или /register для аутентификации\n".encode())
+                    writer.write("❌ Введите /login [username] [password] для входа\n❌ Введите /register [username] [password] для аутентификации\n".encode())
 
             except (ConnectionResetError, asyncio.IncompleteReadError) as e:
                 current_room = remove_user_from_system(writer, room_manager, users)
