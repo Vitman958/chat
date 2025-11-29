@@ -21,4 +21,9 @@ class AuthManager:
             self.auth_writers.remove(writer)
 
     async def register(self, nick_name, password):
-        await self.database_manager.save_user(nick_name, password)
+        try:
+            await self.database_manager.save_user(nick_name, password)
+            return True
+        except Exception as e:
+            print(f"Ошибка регистрации: {e}")
+            return False
