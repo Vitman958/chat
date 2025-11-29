@@ -7,6 +7,7 @@ from utils.logger_setup import get_logger
 
 
 logger = get_logger(__name__)
+NO_AUTH_COMMANDS = {"/login", "/register", "/help"}
 
 
 def remove_user_from_system(writer, room_manager, users):
@@ -21,7 +22,7 @@ def remove_user_from_system(writer, room_manager, users):
     return current_room
 
 
-async def handle_read(reader, writer, nick_name, stop_event, users, room_manager, rate_limiter, command_handler, database_manager):
+async def handle_read(reader, writer, nick_name, stop_event, users, room_manager, rate_limiter, command_handler, database_manager, auth_manager):
     try:
         while True:
             try:
@@ -31,7 +32,12 @@ async def handle_read(reader, writer, nick_name, stop_event, users, room_manager
                 msg = data.decode().strip()
 
                 if msg.startswith("/"):
-                    response = await handle_command(writer, msg, command_handler, users, stop_event, room_manager, current_room, nick_name, database_manager)   
+                    if not auth_manager.is_authenticated(writer) and msg.split()[0] not in NO_AUTH_COMMANDS:
+                        writer.write("❌ Введите /login или /register для аутентификации\n".encode())
+                        await writer.drain()
+                        continue
+                
+                    response = await handle_command(writer, msg, command_handler, users, stop_event, room_manager, current_room, nick_name, database_manager, auth_manager)       
                     if response:
                         continue
                     else:
@@ -55,8 +61,11 @@ async def handle_read(reader, writer, nick_name, stop_event, users, room_manager
                         timestamp=datetime.now().strftime("%H:%M")
                     )
 
-                await current_room.send_message(msg, nick_name, exclude_writer=writer)
-                logger.info(f"Пользователь {nick_name} отправил сообщение")
+                if auth_manager.is_authenticated(writer):
+                    await current_room.send_message(msg, nick_name, exclude_writer=writer)
+                    logger.info(f"Пользователь {nick_name} отправил сообщение")
+                else:
+                    writer.write("❌ Введите /login или /register для аутентификации\n".encode())
 
             except (ConnectionResetError, asyncio.IncompleteReadError) as e:
                 current_room = remove_user_from_system(writer, room_manager, users)
@@ -96,7 +105,7 @@ async def handle_server_commands(room_manager):
         logger.error(f"Ошибка запуска handle_server_commands")
 
 
-async def handle_command(writer, msg, command_handler, users, stop_event, room_manager, current_room, nick_name, database_manager):
+async def handle_command(writer, msg, command_handler, users, stop_event, room_manager, current_room, nick_name, database_manager, auth_manager):
     command_name = msg.split()[0]
 
     result = await command_handler.execute_command(
@@ -109,6 +118,7 @@ async def handle_command(writer, msg, command_handler, users, stop_event, room_m
         current_room=current_room,
         nick_name=nick_name,
         database_manager=database_manager,
+        auth_manager=auth_manager,
         remove_user_from_system=remove_user_from_system,
         commands=commands,
         logger=logger
