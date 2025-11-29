@@ -5,7 +5,10 @@ class CommandHandler:
             "/exit": self._handle_exit,
             "/connect": self._handle_connect,
             "/leave": self._handle_leave,
-            "/rooms": self._handle_rooms
+            "/rooms": self._handle_rooms,
+            "/login": self._handle_login,
+            "/register": self._handle_register,
+            "/logout": self._handle_logout
         }
 
     async def execute_command(self, command_name, **kwargs):
@@ -128,3 +131,59 @@ class CommandHandler:
         response = f"Доступные комнаты:\n  • {rooms_list}\n"
         writer.write(response.encode())
         await writer.drain()        
+
+    async def _handle_login(self, **kwargs):
+        writer = kwargs["writer"]
+        msg = kwargs["msg"]
+        auth_manager = kwargs["auth_manager"]
+        parts = msg.split()
+        if len(parts) >= 3:
+            username = parts[1]
+            password = parts[2]
+
+            if await auth_manager.authenticate(writer, username, password):
+                writer.write(f"✅ Успешная аутентификация\n".encode())
+                await writer.drain()  
+            else:
+                writer.write(f"❌ Неправильно введен логин или пароль\n".encode())
+                await writer.drain()  
+        else:
+            writer.write(f"❌ Неправильный формат команды. Используйте: /login username password\n".encode())
+            await writer.drain() 
+
+    async def _handle_register(self, **kwargs):
+        writer = kwargs["writer"]
+        msg = kwargs["msg"]
+        auth_manager = kwargs["auth_manager"]
+
+        parts = msg.split()
+        if len(parts) >= 3:
+            username = parts[1]
+            password = parts[2]
+
+            if await auth_manager.register(username, password):
+                if await auth_manager.authenticate(writer, username, password):
+                    writer.write(f"✅ Успешная регистрация и аутентификация\n".encode())
+                    await writer.drain() 
+                else:
+                    writer.write(f"⚠️ Успешная регистрация, но ошибка аутентификации\n".encode())
+                    await writer.drain() 
+            else:
+                writer.write(f"❌ Ошибка регистрации\n".encode())
+                await writer.drain() 
+        else:
+            writer.write(f"❌ Неправильный формат команды. Используйте: /registr username password\n".encode())
+            await writer.drain() 
+
+    async def _handle_logout(self, **kwargs):
+        writer = kwargs["writer"]
+        auth_manager = kwargs["auth_manager"]
+
+        if writer in auth_manager.auth_users:
+            auth_manager.logout(writer)
+            writer.write(f"✅ Вы вышли из системы\n".encode())
+            await writer.drain()
+        else:
+            writer.write(f"❌ Вы не были аутентифицированы\n".encode())
+            await writer.drain()
+        
