@@ -46,7 +46,7 @@ class DatabaseManager:
             cursor = await con.execute("""
             SELECT timestamp, sender, message FROM Messages 
             WHERE room_name = ?
-            ORDER BY id DESC
+            ORDER BY id ASC
             LIMIT ?
             """, (room_name, limit))
 
@@ -63,7 +63,7 @@ class DatabaseManager:
             VALUES (?, ?)
             """, (nick_name, password_hash))
 
-            await con.commit
+            await con.commit()
 
     async def verify_user(self, nick_name, password):
 
@@ -71,7 +71,7 @@ class DatabaseManager:
             cursor = await con.execute("""
             SELECT password_hash FROM Users
             WHERE username = ?
-            """, (nick_name))
+            """, (nick_name,))
 
             user = await cursor.fetchone()
             if user is None:
