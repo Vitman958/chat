@@ -1,5 +1,6 @@
 class CommandHandler:
     def __init__(self):
+        """Инициализация списка команд"""
         self.commands = {
             "/help": self._handle_help,
             "/exit": self._handle_exit,
@@ -12,6 +13,7 @@ class CommandHandler:
         }
 
     async def execute_command(self, command_name, **kwargs):
+        """Проверка на существование команды"""
         method = self.commands.get(command_name)
         if method:
             await method(**kwargs)
@@ -19,6 +21,7 @@ class CommandHandler:
         return False
 
     async def _handle_help(self, **kwargs):
+        """Команда /help"""
         writer = kwargs["writer"]
         nick_name = kwargs["nick_name"]
         commands = kwargs["commands"]
@@ -30,17 +33,18 @@ class CommandHandler:
             logger.info(f"Пользователь [{nick_name} запросил справку]")
 
     async def _handle_exit(self, **kwargs):
+        """Команда /exit"""
         writer = kwargs["writer"]
         stop_event = kwargs["stop_event"]
         room_manager = kwargs["room_manager"]
         current_room = kwargs["current_room"]
         remove_user_from_system = kwargs["remove_user_from_system"]
         nick_name = kwargs["nick_name"]
-        users = kwargs["users"]
+        user_id = kwargs["user_id"]
         logger = kwargs["logger"]
 
         stop_event.set()
-        current_room = remove_user_from_system(writer, room_manager, users)
+        await remove_user_from_system(room_manager, user_id)
 
         info = f"Пользователь [{nick_name}] вышел с сервера"
         await current_room.send_message(info, "Сервер", exclude_writer=writer)
@@ -48,26 +52,25 @@ class CommandHandler:
         logger.info(f"Пользователь {nick_name} вышел с сервера")
 
     async def _handle_connect(self, **kwargs):
+        """Команда /connect [room_name]"""
         writer = kwargs["writer"]
         msg = kwargs["msg"]
+        user_id = kwargs["user_id"]
         room_manager = kwargs["room_manager"]
         current_room = kwargs["current_room"]
         nick_name = kwargs["nick_name"]
         database_manager = kwargs["database_manager"]
 
         room_name = msg[9:]
-        if room_manager.check_room(room_name):
+        if await room_manager.check_room(room_name):
             leave_msg = f"Пользователь [{nick_name}] покинул комнату"
             await current_room.send_message(leave_msg, "Сервер", exclude_writer=writer)
 
-            current_room.remove_users(writer)
-            room_manager.delete_user_from_rooms(writer)
+            await room_manager.delete_user_from_rooms(user_id)
                             
-            new_room = room_manager.get_room(room_name)
-            new_room.add_users(writer, nick_name)
-            room_manager.assign_user_to_room(writer, new_room)
+            await room_manager.assign_user_to_room(writer, user_id, room_name, nick_name)
 
-            current_room = new_room
+            current_room = await room_manager.get_room(room_name)
 
             messages = await database_manager.get_messages(room_name)
             for timestamp, sender, message in messages:
@@ -86,7 +89,9 @@ class CommandHandler:
             await writer.drain()
 
     async def _handle_leave(self, **kwargs):
+        """Команда /leave"""
         writer = kwargs["writer"]
+        user_id = kwargs["user_id"]
         room_manager = kwargs["room_manager"]
         current_room = kwargs["current_room"]
         nick_name = kwargs["nick_name"]
@@ -100,12 +105,10 @@ class CommandHandler:
         leave_msg = f"Пользователь [{nick_name}] покинул комнату"
         await current_room.send_message(leave_msg, "Сервер", exclude_writer=writer)
 
-        current_room.remove_users(writer)
-        room_manager.delete_user_from_rooms(writer)
-
-        default_room = room_manager.get_room("general")
-        default_room.add_users(writer, nick_name)
-        room_manager.assign_user_to_room(writer, default_room)
+        await room_manager.delete_user_from_rooms(user_id)
+                    
+        default_room = await room_manager.get_room("general")
+        await room_manager.assign_user_to_room(writer, user_id, "general", nick_name)
 
         enter_msg = f"Пользователь [{nick_name}] вошел в главную комнату"
         await default_room.send_message(enter_msg, "Сервер", exclude_writer=writer)
@@ -122,17 +125,18 @@ class CommandHandler:
         return True
     
     async def _handle_rooms(self, **kwargs):
+        """Команда /rooms"""
         writer = kwargs["writer"]
         room_manager = kwargs["room_manager"]
 
-        all_rooms = room_manager.get_rooms()
-        room_names = list(all_rooms.keys())
-        rooms_list = "\n  • ".join(room_names)
+        all_rooms = await room_manager.get_rooms()
+        rooms_list = "\n  • ".join(all_rooms)
         response = f"Доступные комнаты:\n  • {rooms_list}\n"
         writer.write(response.encode())
         await writer.drain()        
 
     async def _handle_login(self, **kwargs):
+        """Команда /login [nick_name] [password]"""
         writer = kwargs["writer"]
         msg = kwargs["msg"]
         auth_manager = kwargs["auth_manager"]
@@ -152,6 +156,7 @@ class CommandHandler:
             await writer.drain() 
 
     async def _handle_register(self, **kwargs):
+        """Команда /register [nick_name] [password]"""
         writer = kwargs["writer"]
         msg = kwargs["msg"]
         auth_manager = kwargs["auth_manager"]
@@ -176,10 +181,11 @@ class CommandHandler:
             await writer.drain() 
 
     async def _handle_logout(self, **kwargs):
+        """Команда /logout"""
         writer = kwargs["writer"]
         auth_manager = kwargs["auth_manager"]
 
-        if writer in auth_manager.auth_users:
+        if auth_manager.is_authenticated(writer):
             auth_manager.logout(writer)
             writer.write(f"✅ Вы вышли из системы\n".encode())
             await writer.drain()
