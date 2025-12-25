@@ -4,7 +4,6 @@ from aioconsole import ainput
 from server.handlers import handle_read, handle_server_commands
 from server.server_setup import create_handler
 from utils.logger_setup import get_logger
-from shared.users import ListClients
 from shared.rooms import RoomManager
 from shared.limits import RateLimiter
 from shared.command_handler import CommandHandler
@@ -16,10 +15,16 @@ logger = get_logger(__name__)
 
 
 async def main():
+    """Модуль запуска сервера"""
     server_name = await ainput("Имя сервера: \n")
+    database_manager = DatabaseManager()
+    await database_manager.init_db()
+
+    rate_limiter = RateLimiter()
+    command_handler = CommandHandler()
+    auth_manager = AuthManager(database_manager)
     
-    room = RoomManager()
-    room.create_room("general")
+    room = RoomManager(database_manager)    
 
     while True:
         print("Настройка сервера")
@@ -28,25 +33,17 @@ async def main():
             break
         elif setup_cmd.startswith("/create "):
             room_name = setup_cmd[8:]
-            if room.check_room(room_name):
-                print(f"комнта {room_name} уже создана")
+            if await room.check_room(room_name):
+                print(f"❌комнта {room_name} уже создана")
             else:
-                room.create_room(room_name)
-                print(f"комната {room_name} создана")
+                await room.create_room(room_name)
+                print(f"✅комната {room_name} создана")
     
-
-    users = ListClients()
-    rate_limiter = RateLimiter()
-    command_handler = CommandHandler()
-    database_manager = DatabaseManager()
-    auth_manager = AuthManager(database_manager)
-    
-    await database_manager.init_db()
 
     logger.info(f"Создан сервер с именем: {server_name}")
     print(f"Сервер {server_name} успешно создан")
 
-    handler = create_handler(users, server_name, handle_read, room, rate_limiter, command_handler, database_manager, auth_manager)
+    handler = create_handler(server_name, handle_read, room, rate_limiter, command_handler, database_manager, auth_manager)
 
     server_task = asyncio.create_task(
         handle_server_commands(room))
