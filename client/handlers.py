@@ -1,6 +1,7 @@
 from aioconsole import ainput
 
 async def handle_read(reader, stop_event):
+    """Чтение сообщений от сервера"""
     while True:
         data = await reader.readline()
         if not data or stop_event.is_set():
@@ -9,6 +10,7 @@ async def handle_read(reader, stop_event):
 
 
 async def handle_write(writer, stop_event):
+    """Отправка сообщений серверу"""
     while True:
         try:
             msg = await ainput()
