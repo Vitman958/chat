@@ -4,6 +4,7 @@ from aioconsole import ainput
 from client.handlers import handle_read, handle_write
 
 async def main():
+    """Точка запуска клиента"""
     reader, writer = await asyncio.open_connection("localhost", 8888)
     stop_event = asyncio.Event()
 
