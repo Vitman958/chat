@@ -10,23 +10,22 @@ logger = get_logger(__name__)
 NO_AUTH_COMMANDS = {"/login", "/register", "/help"}
 
 
-def remove_user_from_system(writer, room_manager, users):
+async def remove_user_from_system(room_manager, user_id):
     """Удаления пользователя из системы."""
-    current_room = room_manager.get_user_room(writer)
-       
-    if current_room:
-        current_room.remove_users(writer)
-        room_manager.delete_user_from_rooms(writer)
-    
-    users.remove_user(writer)
+    current_room = await room_manager.get_user_room(user_id)
+
+    await room_manager.delete_user_from_rooms(user_id)
+
     return current_room
 
 
-async def handle_read(reader, writer, nick_name, stop_event, users, room_manager, rate_limiter, command_handler, database_manager, auth_manager):
+async def handle_read(reader, writer, nick_name, stop_event, user_id, room_manager, rate_limiter, command_handler, database_manager, auth_manager):
+    """Ручка для чтения и ответа на сообщения."""
     try:
         while True:
             try:
-                current_room = room_manager.get_user_room(writer)
+                room_name = await room_manager.get_user_room(user_id)
+                current_room = await room_manager.get_room(room_name) if room_name else None
                 
                 data = await reader.readline()
                 msg = data.decode().strip()
@@ -36,10 +35,14 @@ async def handle_read(reader, writer, nick_name, stop_event, users, room_manager
                         writer.write("❌ Введите /login [username] [password] для входа\n❌ Введите /register [username] [password] для аутентификации\n".encode())
                         await writer.drain()
                         continue
-                
-                    response = await handle_command(writer, msg, command_handler, users, stop_event, room_manager, current_room, nick_name, database_manager, auth_manager)       
-                    if response:
+                    
+                    command_name = msg.split()[0]
+                    if command_name in command_handler.commands:
+                        await handle_command(writer, msg, command_handler, user_id, stop_event, room_manager, current_room, nick_name, database_manager, auth_manager)
+                        updated_room_name = await room_manager.get_user_room(user_id)
+                        current_room = await room_manager.get_room(updated_room_name) if updated_room_name else None     
                         continue
+                    
                     else:
                         writer.write(f"❌Такой команды не существует!\n".encode())
 
@@ -53,10 +56,10 @@ async def handle_read(reader, writer, nick_name, stop_event, users, room_manager
 
                 
                 if current_room:
-                    room_name = current_room.room
-                    if auth_manager.is_authenticated(writer):
+                    room_name_obj = current_room.room
+                    if auth_manager.is_authenticated(writer) and not msg.startswith("/"):
                         await database_manager.save_message(
-                            room_name=room_name,
+                            room_name=room_name_obj,
                             sender=nick_name,
                             message=msg,
                             timestamp=datetime.now().strftime("%H:%M")
@@ -69,14 +72,17 @@ async def handle_read(reader, writer, nick_name, stop_event, users, room_manager
                     writer.write("❌ Введите /login [username] [password] для входа\n❌ Введите /register [username] [password] для аутентификации\n".encode())
 
             except (ConnectionResetError, asyncio.IncompleteReadError) as e:
-                current_room = remove_user_from_system(writer, room_manager, users)
+                current_room_name = await room_manager.get_user_room(user_id)
+                current_room_obj = await room_manager.get_room(current_room_name) if current_room_name else None
+
+                await remove_user_from_system(room_manager, user_id)
                     
                 print(f"Пользователь [{nick_name}] вышел с сервера")
                 logger.warning(f"Пользователь {nick_name} вышел с сервера, закрыв терминал")
 
-                if current_room:
+                if current_room_obj:
                     exit_msg = f"Пользователь [{nick_name}] вышел с сервера"
-                    await current_room.send_message(exit_msg, "Сервер", exclude_writer=writer)
+                    await current_room_obj.send_message(exit_msg, "Сервер", exclude_writer=writer)
                 
                 stop_event.set()
                 break
@@ -90,6 +96,7 @@ async def handle_read(reader, writer, nick_name, stop_event, users, room_manager
 
 
 async def handle_server_commands(room_manager):
+    """Обработка команд сервера."""
     try:
         while True:                
             msg = await ainput()
@@ -106,14 +113,15 @@ async def handle_server_commands(room_manager):
         logger.error(f"Ошибка запуска handle_server_commands")
 
 
-async def handle_command(writer, msg, command_handler, users, stop_event, room_manager, current_room, nick_name, database_manager, auth_manager):
+async def handle_command(writer, msg, command_handler, user_id, stop_event, room_manager, current_room, nick_name, database_manager, auth_manager):
+    """Ручка для обработки команд пользователя"""
     command_name = msg.split()[0]
 
-    result = await command_handler.execute_command(
+    await command_handler.execute_command(
         command_name=command_name,
         writer=writer,
         msg=msg,
-        users=users,
+        user_id=user_id,
         stop_event=stop_event,
         room_manager=room_manager,
         current_room=current_room,
@@ -124,4 +132,3 @@ async def handle_command(writer, msg, command_handler, users, stop_event, room_m
         commands=commands,
         logger=logger
     )
-    return result
