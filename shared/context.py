@@ -1,8 +1,3 @@
-"""
-Модуль, содержащий класс контекста для передачи данных между компонентами приложения
-"""
-
-
 class ServerContext:
     """
     Класс контекста для передачи всех необходимых данных сервера
@@ -46,7 +41,7 @@ class ServerContext:
         """
         Создает копию контекста с обновленными значениями
         """
-        # Создаем новый контекст с теми же параметрами, что и текущий
+ 
         new_context = ServerContext(
             server_name=self.server_name,
             reader=self.reader,
@@ -64,7 +59,7 @@ class ServerContext:
             commands=self.commands,
             logger=self.logger
         )
-        # Обновляем указанные атрибуты
+    
         for attr, value in updates.items():
             setattr(new_context, attr, value)
         return new_context
