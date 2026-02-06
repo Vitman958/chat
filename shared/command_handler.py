@@ -1,3 +1,6 @@
+from shared.context import ServerContext
+
+
 class CommandHandler:
     def __init__(self):
         """Инициализация списка команд"""
@@ -22,174 +25,211 @@ class CommandHandler:
 
     async def _handle_help(self, **kwargs):
         """Команда /help"""
-        writer = kwargs["writer"]
-        nick_name = kwargs["nick_name"]
-        commands = kwargs["commands"]
-        logger = kwargs["logger"]
-        
-        for command in commands:
-            writer.write(f"[Сервер]: {command}\n".encode())
-            await writer.drain()
-            logger.info(f"Пользователь [{nick_name} запросил справку]")
+        # Создаем контекст из kwargs
+        context = ServerContext(
+            writer=kwargs["writer"],
+            nick_name=kwargs["nick_name"],
+            commands=kwargs["commands"],
+            logger=kwargs["logger"]
+        )
+
+        for command in context.commands:
+            context.writer.write(f"[Сервер]: {command}\n".encode())
+            await context.writer.drain()
+            context.logger.info(f"Пользователь [{context.nick_name} запросил справку]")
 
     async def _handle_exit(self, **kwargs):
         """Команда /exit"""
-        writer = kwargs["writer"]
-        stop_event = kwargs["stop_event"]
-        room_manager = kwargs["room_manager"]
-        current_room = kwargs["current_room"]
+        # Создаем контекст из kwargs
+        context = ServerContext(
+            writer=kwargs["writer"],
+            stop_event=kwargs["stop_event"],
+            room_manager=kwargs["room_manager"],
+            current_room=kwargs["current_room"],
+            nick_name=kwargs["nick_name"],
+            user_id=kwargs["user_id"],
+            logger=kwargs["logger"],
+            commands=kwargs["commands"]
+        )
         remove_user_from_system = kwargs["remove_user_from_system"]
-        nick_name = kwargs["nick_name"]
-        user_id = kwargs["user_id"]
-        logger = kwargs["logger"]
 
-        stop_event.set()
-        await remove_user_from_system(room_manager, user_id)
+        context.stop_event.set()
+        await remove_user_from_system(context.room_manager, context.user_id)
 
-        info = f"Пользователь [{nick_name}] вышел с сервера"
-        await current_room.send_message(info, "Сервер", exclude_writer=writer)
-        print(f"Пользователь [{nick_name}] вышел с сервера, используя команду /exit")
-        logger.info(f"Пользователь {nick_name} вышел с сервера")
+        info = f"Пользователь [{context.nick_name}] вышел с сервера"
+        await context.current_room.send_message(info, "Сервер", exclude_writer=context.writer)
+        print(f"Пользователь [{context.nick_name}] вышел с сервера, используя команду /exit")
+        context.logger.info(f"Пользователь {context.nick_name} вышел с сервера")
 
     async def _handle_connect(self, **kwargs):
         """Команда /connect [room_name]"""
-        writer = kwargs["writer"]
-        msg = kwargs["msg"]
-        user_id = kwargs["user_id"]
-        room_manager = kwargs["room_manager"]
-        current_room = kwargs["current_room"]
-        nick_name = kwargs["nick_name"]
-        database_manager = kwargs["database_manager"]
+        # Создаем контекст из kwargs
+        context = ServerContext(
+            writer=kwargs["writer"],
+            msg=kwargs["msg"],
+            user_id=kwargs["user_id"],
+            room_manager=kwargs["room_manager"],
+            current_room=kwargs["current_room"],
+            nick_name=kwargs["nick_name"],
+            database_manager=kwargs["database_manager"],
+            commands=kwargs["commands"],
+            logger=kwargs["logger"]
+        )
 
-        room_name = msg[9:]
-        if await room_manager.check_room(room_name):
-            leave_msg = f"Пользователь [{nick_name}] покинул комнату"
-            await current_room.send_message(leave_msg, "Сервер", exclude_writer=writer)
+        room_name = context.msg[9:]
+        if await context.room_manager.check_room(room_name):
+            leave_msg = f"Пользователь [{context.nick_name}] покинул комнату"
+            await context.current_room.send_message(leave_msg, "Сервер", exclude_writer=context.writer)
 
-            await room_manager.delete_user_from_rooms(user_id)
-                            
-            await room_manager.assign_user_to_room(writer, user_id, room_name, nick_name)
+            await context.room_manager.delete_user_from_rooms(context.user_id)
 
-            current_room = await room_manager.get_room(room_name)
+            await context.room_manager.assign_user_to_room(context.writer, context.user_id, room_name, context.nick_name)
 
-            messages = await database_manager.get_messages(room_name)
+            current_room = await context.room_manager.get_room(room_name)
+
+            messages = await context.database_manager.get_messages(room_name)
             for timestamp, sender, message in messages:
                 formatted_msg = f"[{timestamp}][{sender}]: {message}\n"
-                writer.write(formatted_msg.encode())
-                await writer.drain()
+                context.writer.write(formatted_msg.encode())
+                await context.writer.drain()
 
-            writer.write(f"✅ Вы присоединились к комнате [{room_name}]\n".encode())
-            await writer.drain()
+            context.writer.write(f"✅ Вы присоединились к комнате [{room_name}]\n".encode())
+            await context.writer.drain()
 
-            connect_msg = f"Пользователь [{nick_name}] присоединился к комнате"
-            await current_room.send_message(connect_msg, "Сервер", exclude_writer=writer)
+            connect_msg = f"Пользователь [{context.nick_name}] присоединился к комнате"
+            await current_room.send_message(connect_msg, "Сервер", exclude_writer=context.writer)
 
         else:
-            writer.write("❌ Такой комнаты не существует\n".encode())
-            await writer.drain()
+            context.writer.write("❌ Такой комнаты не существует\n".encode())
+            await context.writer.drain()
 
     async def _handle_leave(self, **kwargs):
         """Команда /leave"""
-        writer = kwargs["writer"]
-        user_id = kwargs["user_id"]
-        room_manager = kwargs["room_manager"]
-        current_room = kwargs["current_room"]
-        nick_name = kwargs["nick_name"]
-        database_manager = kwargs["database_manager"]
+        # Создаем контекст из kwargs
+        context = ServerContext(
+            writer=kwargs["writer"],
+            user_id=kwargs["user_id"],
+            room_manager=kwargs["room_manager"],
+            current_room=kwargs["current_room"],
+            nick_name=kwargs["nick_name"],
+            database_manager=kwargs["database_manager"],
+            commands=kwargs["commands"],
+            logger=kwargs["logger"]
+        )
 
-        if current_room.room == "general":
-            writer.write("❌ Вы уже находитесь в главной комнате\n".encode())
-            await writer.drain()
+        if context.current_room.room == "general":
+            context.writer.write("❌ Вы уже находитесь в главной комнате\n".encode())
+            await context.writer.drain()
             return False
 
-        leave_msg = f"Пользователь [{nick_name}] покинул комнату"
-        await current_room.send_message(leave_msg, "Сервер", exclude_writer=writer)
+        leave_msg = f"Пользователь [{context.nick_name}] покинул комнату"
+        await context.current_room.send_message(leave_msg, "Сервер", exclude_writer=context.writer)
 
-        await room_manager.delete_user_from_rooms(user_id)
-                    
-        default_room = await room_manager.get_room("general")
-        await room_manager.assign_user_to_room(writer, user_id, "general", nick_name)
+        await context.room_manager.delete_user_from_rooms(context.user_id)
 
-        enter_msg = f"Пользователь [{nick_name}] вошел в главную комнату"
-        await default_room.send_message(enter_msg, "Сервер", exclude_writer=writer)
+        default_room = await context.room_manager.get_room("general")
+        await context.room_manager.assign_user_to_room(context.writer, context.user_id, "general", context.nick_name)
 
-        messages = await database_manager.get_messages(room_name="general")
+        enter_msg = f"Пользователь [{context.nick_name}] вошел в главную комнату"
+        await default_room.send_message(enter_msg, "Сервер", exclude_writer=context.writer)
+
+        messages = await context.database_manager.get_messages(room_name="general")
         for timestamp, sender, message in messages:
             formatted_msg = f"[{timestamp}][{sender}]: {message}\n"
-            writer.write(formatted_msg.encode())
-            await writer.drain()
+            context.writer.write(formatted_msg.encode())
+            await context.writer.drain()
 
-        writer.write("✅ Вы вернулись в главную комнату\n".encode())
-        await writer.drain()
+        context.writer.write("✅ Вы вернулись в главную комнату\n".encode())
+        await context.writer.drain()
 
         return True
     
     async def _handle_rooms(self, **kwargs):
         """Команда /rooms"""
-        writer = kwargs["writer"]
-        room_manager = kwargs["room_manager"]
+        # Создаем контекст из kwargs
+        context = ServerContext(
+            writer=kwargs["writer"],
+            room_manager=kwargs["room_manager"],
+            commands=kwargs["commands"],
+            logger=kwargs["logger"]
+        )
 
-        all_rooms = await room_manager.get_rooms()
+        all_rooms = await context.room_manager.get_rooms()
         rooms_list = "\n  • ".join(all_rooms)
         response = f"Доступные комнаты:\n  • {rooms_list}\n"
-        writer.write(response.encode())
-        await writer.drain()        
+        context.writer.write(response.encode())
+        await context.writer.drain()        
 
     async def _handle_login(self, **kwargs):
         """Команда /login [nick_name] [password]"""
-        writer = kwargs["writer"]
-        msg = kwargs["msg"]
-        auth_manager = kwargs["auth_manager"]
-        parts = msg.split()
+        # Создаем контекст из kwargs
+        context = ServerContext(
+            writer=kwargs["writer"],
+            msg=kwargs["msg"],
+            auth_manager=kwargs["auth_manager"],
+            commands=kwargs["commands"],
+            logger=kwargs["logger"]
+        )
+
+        parts = context.msg.split()
         if len(parts) >= 3:
             username = parts[1]
             password = parts[2]
 
-            if await auth_manager.authenticate(writer, username, password):
-                writer.write(f"✅ Успешная аутентификация\n".encode())
-                await writer.drain()  
+            if await context.auth_manager.authenticate(context.writer, username, password):
+                context.writer.write(f"✅ Успешная аутентификация\n".encode())
+                await context.writer.drain()
             else:
-                writer.write(f"❌ Неправильно введен логин или пароль\n".encode())
-                await writer.drain()  
+                context.writer.write(f"❌ Неправильно введен логин или пароль\n".encode())
+                await context.writer.drain()
         else:
-            writer.write(f"❌ Неправильный формат команды. Используйте: /login username password\n".encode())
-            await writer.drain() 
+            context.writer.write(f"❌ Неправильный формат команды. Используйте: /login username password\n".encode())
+            await context.writer.drain()
 
     async def _handle_register(self, **kwargs):
         """Команда /register [nick_name] [password]"""
-        writer = kwargs["writer"]
-        msg = kwargs["msg"]
-        auth_manager = kwargs["auth_manager"]
+        # Создаем контекст из kwargs
+        context = ServerContext(
+            writer=kwargs["writer"],
+            msg=kwargs["msg"],
+            auth_manager=kwargs["auth_manager"],
+            commands=kwargs["commands"],
+            logger=kwargs["logger"]
+        )
 
-        parts = msg.split()
+        parts = context.msg.split()
         if len(parts) >= 3:
             username = parts[1]
             password = parts[2]
 
-            if await auth_manager.register(username, password):
-                if await auth_manager.authenticate(writer, username, password):
-                    writer.write(f"✅ Успешная регистрация и аутентификация\n".encode())
-                    await writer.drain() 
+            if await context.auth_manager.register(username, password):
+                if await context.auth_manager.authenticate(context.writer, username, password):
+                    context.writer.write(f"✅ Успешная регистрация и аутентификация\n".encode())
+                    await context.writer.drain()
                 else:
-                    writer.write(f"⚠️ Успешная регистрация, но ошибка аутентификации\n".encode())
-                    await writer.drain() 
+                    context.writer.write(f"⚠️ Успешная регистрация, но ошибка аутентификации\n".encode())
+                    await context.writer.drain()
             else:
-                writer.write(f"❌ Ошибка регистрации\n".encode())
-                await writer.drain() 
+                context.writer.write(f"❌ Ошибка регистрации\n".encode())
+                await context.writer.drain()
         else:
-            writer.write(f"❌ Неправильный формат команды. Используйте: /registr username password\n".encode())
-            await writer.drain() 
+            context.writer.write(f"❌ Неправильный формат команды. Используйте: /registr username password\n".encode())
+            await context.writer.drain()
 
     async def _handle_logout(self, **kwargs):
         """Команда /logout"""
-        writer = kwargs["writer"]
-        auth_manager = kwargs["auth_manager"]
+        # Создаем контекст из kwargs
+        context = ServerContext(
+            writer=kwargs["writer"],
+            auth_manager=kwargs["auth_manager"],
+            commands=kwargs["commands"],
+            logger=kwargs["logger"]
+        )
 
-        if auth_manager.is_authenticated(writer):
-            auth_manager.logout(writer)
-            writer.write(f"✅ Вы вышли из системы\n".encode())
-            await writer.drain()
+        if context.auth_manager.is_authenticated(context.writer):
+            context.auth_manager.logout(context.writer)
+            context.writer.write(f"✅ Вы вышли из системы\n".encode())
+            await context.writer.drain()
         else:
-            writer.write(f"❌ Вы не были аутентифицированы\n".encode())
-            await writer.drain()
-        
+            context.writer.write(f"❌ Вы не были аутентифицированы\n".encode())
+            await context.writer.drain()  

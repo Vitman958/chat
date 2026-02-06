@@ -1,7 +1,16 @@
 from aioconsole import ainput
+import asyncio
+from typing import Any
 
-async def handle_read(reader, stop_event):
-    """Чтение сообщений от сервера"""
+
+async def handle_read(reader: Any, stop_event: asyncio.Event) -> None:
+    """
+    Обрабатывает чтение сообщений от сервера
+
+    Args:
+        reader: Объект для чтения данных из соединения
+        stop_event: Событие для остановки цикла чтения
+    """
     while True:
         data = await reader.readline()
         if not data or stop_event.is_set():
@@ -9,8 +18,14 @@ async def handle_read(reader, stop_event):
         print(data.decode().strip())
 
 
-async def handle_write(writer, stop_event):
-    """Отправка сообщений серверу"""
+async def handle_write(writer: Any, stop_event: asyncio.Event) -> None:
+    """
+    Обрабатывает отправку сообщений серверу
+
+    Args:
+        writer: Объект для записи данных в соединение
+        stop_event: Событие для остановки цикла записи
+    """
     while True:
         try:
             msg = await ainput()
@@ -22,11 +37,11 @@ async def handle_write(writer, stop_event):
                 await writer.wait_closed()
                 stop_event.set()
                 break
-            
+
             writer.write(f"{msg}\n".encode())
             await writer.drain()
 
         except ConnectionResetError:
-            print("❌ Разоравно соединение с сервером")
+            print("❌ Разорвано соединение с сервером")
             stop_event.set()
-            break 
+            break
