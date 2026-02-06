@@ -25,7 +25,7 @@ class CommandHandler:
 
     async def _handle_help(self, **kwargs):
         """Команда /help"""
-        # Создаем контекст из kwargs
+        
         context = ServerContext(
             writer=kwargs["writer"],
             nick_name=kwargs["nick_name"],
@@ -40,7 +40,7 @@ class CommandHandler:
 
     async def _handle_exit(self, **kwargs):
         """Команда /exit"""
-        # Создаем контекст из kwargs
+        
         context = ServerContext(
             writer=kwargs["writer"],
             stop_event=kwargs["stop_event"],
@@ -63,7 +63,7 @@ class CommandHandler:
 
     async def _handle_connect(self, **kwargs):
         """Команда /connect [room_name]"""
-        # Создаем контекст из kwargs
+        
         context = ServerContext(
             writer=kwargs["writer"],
             msg=kwargs["msg"],
@@ -105,7 +105,7 @@ class CommandHandler:
 
     async def _handle_leave(self, **kwargs):
         """Команда /leave"""
-        # Создаем контекст из kwargs
+        
         context = ServerContext(
             writer=kwargs["writer"],
             user_id=kwargs["user_id"],
@@ -146,7 +146,7 @@ class CommandHandler:
     
     async def _handle_rooms(self, **kwargs):
         """Команда /rooms"""
-        # Создаем контекст из kwargs
+       
         context = ServerContext(
             writer=kwargs["writer"],
             room_manager=kwargs["room_manager"],
@@ -162,7 +162,7 @@ class CommandHandler:
 
     async def _handle_login(self, **kwargs):
         """Команда /login [nick_name] [password]"""
-        # Создаем контекст из kwargs
+        
         context = ServerContext(
             writer=kwargs["writer"],
             msg=kwargs["msg"],
@@ -188,7 +188,7 @@ class CommandHandler:
 
     async def _handle_register(self, **kwargs):
         """Команда /register [nick_name] [password]"""
-        # Создаем контекст из kwargs
+        
         context = ServerContext(
             writer=kwargs["writer"],
             msg=kwargs["msg"],
@@ -218,7 +218,7 @@ class CommandHandler:
 
     async def _handle_logout(self, **kwargs):
         """Команда /logout"""
-        # Создаем контекст из kwargs
+        
         context = ServerContext(
             writer=kwargs["writer"],
             auth_manager=kwargs["auth_manager"],
