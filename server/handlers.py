@@ -33,7 +33,6 @@ async def handle_read(reader, writer, nick_name, stop_event, user_id, room_manag
                 data = await reader.readline()
                 msg = data.decode().strip()
 
-                # Создаем контекст для передачи в обработчики
                 context = ServerContext(
                     reader=reader,
                     writer=writer,
@@ -59,12 +58,11 @@ async def handle_read(reader, writer, nick_name, stop_event, user_id, room_manag
 
                     command_name = msg.split()[0]
                     if command_name in command_handler.commands:
-                        # Передаем контекст в обработчик команд
+  
                         await handle_command(context)
                         updated_room_name = await room_manager.get_user_room(user_id)
                         current_room = await room_manager.get_room(updated_room_name) if updated_room_name else None
 
-                        # Обновляем контекст с новой комнатой
                         context = context.copy_with(current_room=current_room)
                         continue
 
