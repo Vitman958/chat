@@ -1,8 +1,5 @@
 # Чат-сервер с комнатами
 
-[![Python](https://img.shields.io/badge/python-3.7%2B-blue.svg)](https://www.python.org/downloads/)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-
 Простой многопользовательский чат на Python с поддержкой комнат, аутентификации и хранением истории сообщений.
 
 ## 🚀 Возможности
@@ -88,7 +85,3 @@ python -B -m client.main
 - Веб-интерфейс для чата
 - Поддержка медиафайлов
 - Административные функции
-
-## 📄 Лицензия
-
-Этот проект лицензирован под MIT License - см. файл [LICENSE](LICENSE) для подробностей.
